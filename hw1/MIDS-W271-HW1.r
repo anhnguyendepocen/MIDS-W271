@@ -1,5 +1,17 @@
-
+####################################################
+#
+# Applied Regression and Time Series Analysis
+#
+# W271-4 Homework 1: OLS Estimation
+#
+# Lei Yang, Suhashini R., Ron Cordell
+#
+# R Script used for Homework 1
+# 
+####################################################
+#
 # Load the data from the birthweight_w271.Rdata file
+#
 load("birthweight_w271.Rdata")
 
 library(car)
