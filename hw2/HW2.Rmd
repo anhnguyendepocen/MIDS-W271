@@ -1,0 +1,124 @@
+---
+title: 'W271 - Homework 2: OLS Inference'
+author: "Lei Yang, Ron Cordell, Subhashini Raghunathan"
+date: "Feb 11, 2016"
+output: pdf_document
+---
+
+**Load the 401k_w271.RData dataset and look at the value of the function desc() to see what variables are included.**
+
+```{r, warning=FALSE, message=FALSE}
+# load packages
+library(car)
+library(lmtest)
+library(sandwich)
+# set work dir, clear workspace, load data, show description
+setwd("~/Desktop/W271Data")
+rm(list=ls())
+load('401k_w271.Rdata')
+desc
+```
+
+**1. Your dependent variable will be *prate*, representing the fraction of a company’s employees participating in its 401k plan. Because this variable is bounded between $0$ and $1$, a linear model without any transformations may not be the most ideal way to analyze the data, but we can still learn a lot from it. Examine the prate variable and comment on the shape of its distribution.**
+
+We first show the summary of $prate$, then plot a histogram:
+
+```{r, warning=FALSE, message=FALSE}
+# show prate summary
+summary(data$prate)
+# histogram
+hist(data$prate, breaks = 30)
+```
+
+from the summary, we can see there are **``r sprintf("%d", sum(data$prate>100))``** records with invalid *prate* values ($>100$):
+
+```{r}
+# show records with invalid prate value
+data[data$prate>100, ]
+# update data dataframe
+data <- data[data$prate<=100, ]
+```
+
+and the distribution of $prate$ is not Normal, with big negative skew, because most employees are participating in most companies. Finally, We will get rid of the **$3$** records with $>100\%$ values.
+
+**2. Your independent variable will be $mrate$, the rate at which a company matches employee 401k contributions. Examine this variable and comment on the shape of its distribution.**
+
+From the histogram of $mrate$:
+
+```{r}
+# show summary and histogram of mrate variable
+summary(data$mrate)
+hist(data$mrate, breaks=20)
+```
+
+the distribution of $mrate$ is not Normal either, with big positive skew. In addition, all records have valid percentage value.
+
+**3. Generate a scatterplot of prate against mrate. Then estimate the linear regression of prate on mrate. What slope coefficient did you get?**
+
+We first generate the scatterplot, then estimate the linear regression for two highly skewed variables:
+
+```{r}
+# generate scatterplot of prate against mrate
+plot(data$mrate, data$prate)
+# build a linear regression model of prate on mrate
+m3 <- lm(prate ~ mrate, data = data)
+# evaluate model coefficients
+summary(m3)
+# overlay our linear model on the scatterplot
+abline(m3, col = "red")
+```
+
+the slope coefficient of $mrate$ is **``r sprintf("%.4f", m3$coefficients[2])``**.
+
+**4. Is the assumption of zero-conditional mean realistic? Explain your evidence. What are the implications for your OLS coefficients?**
+
+To evaluate the "zero-conditional mean" assumption $MLR 4'$, we want to check the *Residuals vs. Fitted Value* plot. And from below we can see, the residuals first increases above zero, then decreases to below zero, as the prediction increases. 
+Also note that those negative errors are mostly associated with the fitted values that are larger than $100\%$, which is not really valid.
+
+```{r}
+# model diagnostic
+plot(m3)
+```
+
+The intercept **``r sprintf("%.4f", m3$coefficients[1])``** indicates that even without any corporate matching, on average their still will be **``r sprintf("%.4f%%", m3$coefficients[1])``** employees participate 401k. And the slope **``r sprintf("%.4f", m3$coefficients[2])``** implicates that with every $1\%$ increase of corporate matching, the participation rate will go up **``r sprintf("%.4f%%", m3$coefficients[2])``**.
+
+**5. Is the assumption of homoskedasticity realistic? Provide at least two pieces of evidence to support your conclusion. What are the implications for your OLS analysis?**
+
+From both the *Residuals vs Fitted* and *mrate vs prate* plots, we can see the error variance is bigger toward left and reduces toward right, which can be attributed to less data in the region of large matching rate. Thus we seem to have violation in homoskedasticity. In order to accommodate the effect, we use robust standard errors instead:
+
+```{r}
+# robust standard error
+re = coeftest(m3, vcov = vcovHC)
+re
+```
+
+notice that the estimate is identical with OLS, but the standard error is bigger to address homoskedasticity.
+
+**6. Is the assumption of normal errors realistic? Provide at least two pieces of evidence to support your conclusion. What are the implications for your OLS analysis?**
+
+From the below histogram of residuals, we can see it has negative skew, and is not normal.
+
+```{r}
+hist(m3$residuals, breaks = 50)
+```
+
+In addition, from the above *QQ plot for standardized residuals*, we can observe the negative skew as well. But because we have a large sample size **``r sprintf("%d", nrow(data))``**, we can get normality of our sampling distributions.
+
+**7. Based on the above considerations, what is the standard error of your slope coeffi cient?**
+
+From the robust error calculation above, the standard error of slope coefficent is **``r sprintf("%.4f", re[4])``**.
+
+**8. Is the effect you find statistically significant, and is it practically significant?**
+
+To test overall model significance, we use the wald test, which generalizes the usual F-test of overall significance, but allows for a heteroskedasticity-robust covariance matrix.
+
+```{r}
+# run Wald test
+wt <- waldtest(m3, vcov = vcovHC)
+wt
+```
+
+With a $p-value$ of **``r sprintf("%.4f", wt$'Pr(>F)'[2])``** from the Wald test, the model is overall statistically significant. However, given that the standard deviation of $prate$ is **``r sprintf("%.4f", sd(data$prate))``**, the slope of $mrate$ (**``r sprintf("%.4f", m3$coefficients[2])``**) is only **``r sprintf("%.2f%%", 100*m3$coefficients[2]/sd(data$prate))``** of one standard deviation. Thus the treatment from corporate matching rate on the participation rate is practically insignificant.
+
+
+
