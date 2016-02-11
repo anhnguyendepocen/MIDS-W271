@@ -27,7 +27,8 @@ We first show the summary of $prate$, then plot a histogram:
 # show prate summary
 summary(data$prate)
 # histogram
-hist(data$prate, breaks = 30)
+hist(data$prate, breaks = 50, main="Histogram of 401K Participation Rate", 
+     xlab="Participation Rate Percentage")
 ```
 
 from the summary, we can see there are **``r sprintf("%d", sum(data$prate>100))``** records with invalid *prate* values ($>100$):
@@ -39,7 +40,14 @@ data[data$prate>100, ]
 data <- data[data$prate<=100, ]
 ```
 
-and the distribution of $prate$ is not Normal, with big negative skew, because most employees are participating in most companies. Finally, We will get rid of the **$3$** records with $>100\%$ values.
+Re-plot $prate$ histogram with valid value:
+
+```{r}
+hist(data$prate, breaks=50,
+     main="Histogram of 401K Participation Rate", xlab="Participation Rate Percentage")
+```
+
+we can see the distribution of $prate$ is not Normal, with big negative skew, because most employees are participating in most companies. Finally, We will get rid of the **$3$** records with $>100\%$ values.
 
 **2. Your independent variable will be $mrate$, the rate at which a company matches employee 401k contributions. Examine this variable and comment on the shape of its distribution.**
 
@@ -48,7 +56,8 @@ From the histogram of $mrate$:
 ```{r}
 # show summary and histogram of mrate variable
 summary(data$mrate)
-hist(data$mrate, breaks=20)
+hist(data$mrate, breaks=50, main="Histogram of 401K Match Factor", 
+     xlab="401K Match Factor")
 ```
 
 the distribution of $mrate$ is not Normal either, with big positive skew. In addition, all records have valid percentage value.
@@ -59,7 +68,8 @@ We first generate the scatterplot, then estimate the linear regression for two h
 
 ```{r}
 # generate scatterplot of prate against mrate
-plot(data$mrate, data$prate)
+scatterplot(data$mrate, data$prate,main="401K Participation Rate and Match Factor",
+            ylab="Participation Rate, Percentage", xlab="Match Factor")
 # build a linear regression model of prate on mrate
 m3 <- lm(prate ~ mrate, data = data)
 # evaluate model coefficients
