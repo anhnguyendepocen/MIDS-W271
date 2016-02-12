@@ -90,7 +90,7 @@ Also note that those negative errors are mostly associated with the fitted value
 plot(m3)
 ```
 
-The intercept **``r sprintf("%.4f", m3$coefficients[1])``** indicates that even without any corporate matching, on average their still will be **``r sprintf("%.4f%%", m3$coefficients[1])``** employees participate 401k. And the slope **``r sprintf("%.4f", m3$coefficients[2])``** implicates that with every $1\%$ increase of corporate matching, the participation rate will go up **``r sprintf("%.4f%%", m3$coefficients[2])``**.
+The intercept **``r sprintf("%.4f", m3$coefficients[1])``** indicates that even without any corporate matching, on average their still will be **``r sprintf("%.4f%%", m3$coefficients[1])``** employees participate 401k. And the slope **``r sprintf("%.4f", m3$coefficients[2])``** implicates that with every $1\%$ increase of corporate matching, the participation rate will go up **``r sprintf("%.4f%%", m3$coefficients[2])``**. And finally with non-zero conditional mean, the prediction by the model will be biased..
 
 **5. Is the assumption of homoskedasticity realistic? Provide at least two pieces of evidence to support your conclusion. What are the implications for your OLS analysis?**
 
