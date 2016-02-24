@@ -1,0 +1,193 @@
+---
+title: "MIDS-W271-4-HW3"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Homework 3
+
+### Question 1
+
+Load the twoyear.RData dataset and describe the basic structure of the data
+
+-----
+
+```{r message=F, warning=F}
+library(car)
+library(lmtest)
+library(sandwich)
+
+load('twoyear.RData')
+desc
+
+str(data)
+
+summary(data)
+```
+
+-----
+
+### Question 2
+
+Typically, you will need to thoroughly analyze each of the variables in the data set using univariate, bivariate, and multivariate analyses before attempting any model. For this homework, assume that this step has been conducted. Estimate the following regression:
+
+$log(wage)=\beta_{0}+\beta_{1}jc+\beta_{2}univ+\beta_{3}exper+\beta_{4}black+\beta_{5}hispanic+\beta_{6}AA+\beta_{7}BA+\beta_{8}exper*black + \epsilon$
+
+Interpret the coefficents $\hat\beta_{4}$ and $\hat\beta_{8}$
+
+
+Constructing our model we have:
+
+```{r buildmodel}
+model1 <- lm(lwage ~ jc+univ+exper+black+hispanic+AA+BA+exper:black, data=data)
+
+summary(model1)
+```
+
+$\hat\beta_{4}$ is an indicator variable to signify a member of a group. Since the only two race indicators are black and hispanic one could reason that the base group consists of all other races.
+
+$\hat\beta_{8}$ is an interaction term used to explore the partial wage difference of job-experienced blacks compared to other races, controlling for the other terms in the regression model.
+
+-----
+
+### Question 3
+
+With this model, test that the return to university education is 7%.
+
+
+$$H_{0} : \beta_{2} = 0.07$$
+$$H_{1} : \beta_{2} \neq 0.07$$
+
+$$t = (\hat\beta_{2} - 0.07)/se(\hat\beta_{2})$$
+$$t = (0.0732806 - 0.07)/0.0031486 = 1.041923$$
+
+We can calculate the p-value from the t-statistic as:
+
+```{r}
+pt((0.0732806 - 0.07)/0.0031486, 6793-9)
+```
+
+This clearly indicates we can not reject the null hypothesis that $\beta_{2} = 0.07$
+
+Using the linearHypothesis function in R with robust heteroskedasticity standard errors confirms the result.
+
+```{r}
+linearHypothesis(model1, "univ=0.07", vcov=vcovHC)
+```
+
+-----
+
+### Question 4
+
+With this model, test that the return to junior college education is equal for black and non-black.
+
+
+We can add an interaction term between junior college and black to the model:
+```{r}
+model2 <- lm(lwage ~ jc+univ+exper+black+hispanic+AA+BA+black:exper+black:jc, data=data)
+
+summary(model2)
+```
+The return to junior college is 0.0659 for non-blacks; for blacks the return to junior college is
+
+
+```{r}
+0.06591 - 0.03374
+```
+
+A 3% differential, which is not economically large and it is not statistically significant: p = .243. 
+
+-----
+
+### Question 5
+
+With this model, test whether the return to university education is equal to the return to 1 year of working experience.
+
+$$H_{0} : \beta_{2} = \beta_{3} + 1$$
+$$t = \frac{\hat\beta_{2}-(\hat\beta_{3} + 1)}{se(\hat\beta_{2}-\hat\beta_{3})}$$
+
+From the original regression equation:
+$log(wage)=\beta_{0}+\beta_{1}jc+\beta_{2}univ+\beta_{3}exper+\beta_{4}black+\beta_{5}hispanic+\beta_{6}AA+\beta_{7}BA+\beta_{8}exper*black + \epsilon$
+
+We define a new variable as: $\theta_{1} = \beta_{2}-(\beta_{3} + 1) = \beta_{2} - \beta_{3} - 1$
+
+Rearranging we have: $\beta_{2} = \theta_{1}+beta_{3}-1$
+
+Substituting for $\beta_{2}$ we can write:
+
+$log(wage)=\beta_{0}+\beta_{1}jc+(\theta_{1}+beta_{3}-1)univ+\beta_{3}exper+\beta_{4}black+\beta_{5}hispanic+\beta_{6}AA+\beta_{7}BA+\beta_{8}exper*black + \epsilon$
+
+Multiplying and collecting terms yields:
+
+$log(wage)=\beta_{0}+\beta_{1}jc+\theta_{1}univ+beta_{3}(univ+exper)+univ+\beta_{3}exper+\beta_{4}black+\beta_{5}hispanic+\beta_{6}AA+\beta_{7}BA+\beta_{8}exper*black + \epsilon$
+
+One thing that we notice is that the intercept increases for every year of university. We also have a new coefficient of univ+exper. However, these numbers have different scales, so we should create normalized versions of them to add together.
+
+```{r}
+data$unexp <- scale(data$univ) + scale(data$exper)
+model4 <- lm(lwage ~ jc+unexp+exper+black+hispanic+AA+BA+black:exper+black:jc, data=data)
+
+summary(model4)
+```
+
+Using the coefficient on exper of -1.736e-05 and se = 2.608e-04 we arrive at a t statistic of
+```{r}
+-1.736e-05/2.608e-04
+```
+which is very small and therefore we do not reject the null that 1 year of experience is the same as the return on university.
+
+-----
+
+### Question 6
+
+Test the overall significance of this regression.
+
+
+The F-statistic shows highly significant, but we run a Wald test to accomodate for robust errors:
+
+```{r}
+waldtest(model1, vcov=vcovHC)
+```
+
+The F-test again shows as highly significant.
+
+-----
+
+### Question 7
+
+Including a square term of working experience to the regression model built above, estimate the linear regression model again. What is the estimated return to work experience in this model?
+
+```{r}
+data$exper2 <- data$exper^2
+model3 <- lm(lwage ~ jc+univ+exper+exper2+black+hispanic+AA+BA+black:exper, data=data)
+
+summary(model3)
+```
+
+The quadratic term for experience is slightly positive but not statistically significant. It implies a slightly increasing return to experience. The inflection point of the curve is given by
+
+```{r}
+4.3013e-03/(2*3.379e-06)
+
+```
+
+Which is very large at 636.5 and seems to indicate a very slightly increasing "lift" from experience as experience accumulates.
+
+-----
+
+### Question 8
+
+Provide the diagnosis of the homoskedasticity assumption. Does this assumption hold? If so, how does it affect the testing of no effect of university education on salary change? If not, what potential remedies are available?
+
+
+Checking the diagnosic plots of our model we have the following plots. The residuals plot shows that the error is not uniform from left to right. The profile resembles the cross section of an airplane wing. However, the spline curve is mostly flat. We don't have zero conditional mean in this case. However, we do have over 6700 samples for which we can assume things to be asymptotically normal.
+
+```{r pressure, echo=FALSE}
+plot(model1)
+```
+
+
+
