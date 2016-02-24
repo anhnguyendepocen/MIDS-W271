@@ -1,0 +1,110 @@
+---
+title: 'W271 - Homework 4'
+author: "Lei Yang, Ron Cordell, Subhashini Raghunathan"
+date: "Feb 25, 2016"
+output: pdf_document
+---
+
+###The Data
+The file athletics.RData contains a two-year panel of data on 59 universities. Some variables relate to admissions, while others related to atheletic performance. You will use this dataset to investigate whether athletic success causes more students to apply to a university.
+
+This data was made available by Wooldridge, and collected by Patrick Tulloch, then an economics student at MSU. It may have been further modified to test your proficiency. Sources are as follows:
+
+1. Peterson’s Guide to Four Year Colleges*, 1994 and 1995 (24th and 25th editions). Princeton University Press. Princeton, NJ.
+
+2. The Official 1995 College Basketball Records Book*, 1994, NCAA.
+
+3. 1995 Information Please Sports Almanac (6th edition)*. Houghton Mifflin. New York, NY.
+
+```{r, warning=FALSE, message=FALSE}
+# load packages
+library(car)
+library(lmtest)
+library(sandwich)
+# set work dir, clear workspace, load data, show description
+setwd("~/Desktop/W271Data")
+rm(list=ls())
+```
+
+###Question 1:
+
+Examine and summarize the dataset. Note that the actual data is found in the data object, while descriptions can be found in the desc object. How many observations and variables are there?
+
+```{r}
+load('athletics.Rdata')
+desc
+summary(data)
+```
+
+There are **``r sprintf("%d", dim(data)[1])``** observations and **``r sprintf("%d", dim(data)[2])``** variables in the data.
+
+Examine the variables of key interest: apps represents the number of applications for admission. bowl, btitle, and finfour are indicators of athletic success. The three athletic performance variables are all lagged by one year. Intuitively, this is because we expect a school’s athletic success in the previous year to affect how many applications it recieves in the current year.
+
+###Question 2:
+
+Note that the dataset is in long format, with a separate row for each year for each school. To prepare for a difference-in-difference analysis, transfer the dataset to wide-format. Each school should have a single row of data, with separate variables for 1992 and 1993. For example, you should have an apps.1992 variable and an apps.1993 variable to record the number of applications in either year.
+
+```{r}
+# create wideData variable for wide format on year
+wideData <- reshape(data, timevar="year", idvar=c("school"), direction="wide")
+```
+
+Create a new variable, clapps to represent the change in the log of the number of applications from 1992 to 1993. Examine this variable and its distribution.
+Which schools had the greatest increase and the greatest decrease in number of log applications?
+
+```{r}
+# create clapps variable
+wideData$clapps<-log(wideData$apps.1993) - log(wideData$apps.1992)
+# plot histogram
+hist(wideData$clapps, breaks=20, main="Histogram of Change in log(applications)",
+     xlab="log(apps.1993) - log(apps.1992")
+# greatest increase
+cmax <- max(wideData$clapps)
+inc <- wideData[cmax==wideData$clapps, c("school")]
+# greatest decrease
+cmin <- min(wideData$clapps)
+dec <- wideData[cmin==wideData$clapps, c("school")]
+```
+
+For the number of applications, **``r sprintf("%s", inc)``** has the greatest increase of **``r sprintf("%.2f", cmax)``**, and **``r sprintf("%s", dec)``** has the greatest decrease of **``r sprintf("%.2f", cmin)``**.
+
+
+###Question 3:
+
+Similarly to above, create three variables, cperf, cbball, and cbowl to represent the changes in the three athletic success variables. Since these variables are lagged by one year, you are actually computing the change in athletic success from 1991 to 1992.
+
+Which of these variables has the highest variance?
+
+```{r}
+#create cperf, cbball, and cbowl
+wideData$cperf <- wideData$perf.1993 - wideData$perf.1992
+wideData$cbball <- wideData$bball.1993 - wideData$bball.1992
+wideData$cbowl <- wideData$bowl.1993 - wideData$bowl.1992
+# check variance
+var(wideData[c("cperf", "cbball", "cbowl")])
+```
+
+**cperf** has the highest variance of **$0.8243$**.
+
+###Question 4: 
+
+We are interested in a population model,
+$$lapps_i=\gamma_0+\beta_0I_{1993}+\beta_1bowl_i+\beta_2btitle_i+\beta_3finfour_i+a_i+u_{it}$$
+Here, $I_1993$ is an indicator variable for the year $1993$. $a_i$ is the time-constant effect of school $i$. $u_{it}$ is the idiosyncratic effect of school $i$ at time $t$. The athletic success indicators are all lagged by one year as discussed above.
+
+At this point, we assume that (1) all data points are independent random draws from this population model (2) there is no perfect multicollinearity (3) $E(a_i) = E(u_{it}) = 0$
+
+You will estimate the first-difference equation,
+$$clapps_i=\beta_0+\beta_1cbowl_i+\beta_2cbtitle_i+\beta_3finfour_i+a_i+cu_i$$
+where $cu_i=u_{i1993}-u_{i1992}$ is the change in the idiosyncratic term from 1992 to 1993.
+
+a - What additional assumption is needed for this population model to be causal? Write this in mathematical notation and also explain it intuitively in English.
+
+b - What additional assumption is needed for OLS to consistently estimate the first-difference model? Write this in mathematical notation and also explain it intuitively in English. Comment on whether this assumption is plausible in this setting.
+
+###Question 5:
+Estimate the first-difference model given above. Using the best practices descibed in class, interpret the slope coefficients and comment on their statistical significance and practical significance.
+
+###Question 6:
+Test the joint signifance of the three indicator variables. This is the test of the overall model. What impact does the result have on your conclusions?
+
