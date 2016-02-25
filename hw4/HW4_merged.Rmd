@@ -129,9 +129,10 @@ dec <- wideData[cmin==wideData$clapps, c("school")]
 For the number of applications, **``r sprintf("%s", inc)``** has the greatest increase of **``r sprintf("%.2f", cmax)``**, and **``r sprintf("%s", dec)``** has the greatest decrease of **``r sprintf("%.2f", cmin)``**.
 
 ```{r echo=FALSE}
-hist(dw$clapps, breaks=50, main="Histogram of Change in log(apps) from 1992 to 1993",
-     xlab="Change in log(apps)")
+hist(wideData$clapps, breaks=50, main="Histogram of Change in log(apps) from 1992 to 1993", xlab="Change in log(apps)")
+```
 
+```{r echo=FALSE, warning=FALSE}
 ggplot(data=wideData, aes(x=school, y=clapps)) + geom_bar(stat="identity") + scale_fill_brewer() +
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) + theme(legend.title= element_blank())
 ```
@@ -205,11 +206,17 @@ $$E(\Delta u_{i} \;\bigg|\; cbowl,cbtitle,cfinfour ) = 0$$
 
 There must be no correlation between the residual error term and any of the random variables. If there is correlation between $\Delta u$ and $\Delta \mathbf{X_{i}}$ then there will be bias in the estimators.
 
+In addition, the assignment of predictor variables should be random, this is equivalent to conducting a randomized experiment to collect the data.
+
 **b) - What additional assumption is needed for OLS to consistently estimate the first-difference model? Write this in mathematical notation and also explain it intuitively in English. Comment on whether this assumption is plausible in this setting.**
 
 The additional assumption of OLS to consistently estimate the first difference model is there must be some variance in the random variables across the time periods.
 
 $$var(\Delta \mathbf{X}_{i}) > 0)$$
+
+And to reduce bias, the change in the idiosyncratic terms at any different time should not be correlated with the change in sports performance. Mathematically:
+
+$$cov(\Delta u,\Delta \mathbf{X_{i}}) = 0$$
 
 ###Question 5:
 Estimate the first-difference model given above. Using the best practices descibed in class, interpret the slope coefficients and comment on their statistical significance and practical significance.
@@ -227,18 +234,30 @@ From the coefficients, the improvement in bowl game has statistically significan
 plot(m5)
 ```
 
-it seems the model has violation in both zero-conditional mean and homoskedasticity. In addition, school #3 (**arizona state**) has the number of an outlier.
+it seems the model has violation in both zero-conditional mean and homoskedasticity. From the fitted value plot, there ar a lot of points having the same prediction, this may be an indication that we don't have a good variation in the predictors of our data. In addition, school #3 (**arizona**) has the number of an outlier. Let's remove this data point and refit our model again:
 
+```{r}
+wideData2 <- wideData[wideData$school != "arizona",]
+m5.2 <- lm(clapps ~ cbowl+cbtitle+cfinfour, data=wideData2)
+summary(m5.2)
+```
 
+we can see that after removing this outlier, all three coefficients are not significant anymore. From data we can see the application of **arizona** has increased from 13327 to 19860 (**4.9%**), which coincidentally happened with a bowl game appearance. In addition, the impact of conference title becomes much smaller in the new model. 
 
-We check the joint hypothesis that : $H_{0}: \beta_{2}, \beta_{3} = 0$ using the F test between the unrestricted model RSS and the restricted model RSS.
+And there is no significant improvement in the zero-condition mean and heteraskadasticity assumptions from the diagnostic plots below.
+
+```{r}
+plot(m5.2)
+```
+
+Finally, we check the joint hypothesis that : $H_{0}: \beta_{2}, \beta_{3} = 0$ using the F test between the unrestricted model RSS and the restricted model RSS.
 
 ```{r }
-model1.r <- lm(clapps ~ cbowl, data=wideData)
-rss.r = sum(residuals(model1.r)^2)
-rss.ur = sum(residuals(model1)^2)
+m5.r <- lm(clapps ~ cbowl, data=wideData)
+rss.r = sum(residuals(m5.r)^2)
+rss.ur = sum(residuals(m5)^2)
 
-linearHypothesis(model1, c("cbtitle","cfinfour"), vcov=vcovHC)
+linearHypothesis(m5, c("cbtitle","cfinfour"), vcov=vcovHC)
 ```
 
 We can't reject the null hypothesis that $\beta_2$ and $\beta_3$ are statistically different than 0.
@@ -247,6 +266,7 @@ We can't reject the null hypothesis that $\beta_2$ and $\beta_3$ are statistical
 **Test the joint signifance of the three indicator variables. This is the test of the overall model. What impact does the result have on your conclusions?**
 
 ```{r }
-waldtest(model1, test='F', vcov=vcovHC)
-
+waldtest(m5, test='F', vcov=vcovHC)
 ```
+
+The result is consistent with previous conclusions that the overall changes in sports performance do not have significant impact on the change in school application.
