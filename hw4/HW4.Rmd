@@ -18,6 +18,10 @@ This data was made available by Wooldridge, and collected by Patrick Tulloch, th
 
 ```{r, warning=FALSE, message=FALSE}
 # load packages
+knitr::opts_chunk$set(echo = TRUE)
+library(car)
+library(ggplot2)
+library(lattice)
 library(car)
 library(lmtest)
 library(sandwich)
@@ -28,33 +32,89 @@ rm(list=ls())
 
 ###Question 1:
 
-Examine and summarize the dataset. Note that the actual data is found in the data object, while descriptions can be found in the desc object. How many observations and variables are there?
+**Examine and summarize the dataset. Note that the actual data is found in the data object, while descriptions can be found in the desc object. How many observations and variables are there?**
 
 ```{r}
 load('athletics.Rdata')
 desc
-summary(data)
+str(data)
 ```
 
-There are **``r sprintf("%d", dim(data)[1])``** observations and **``r sprintf("%d", dim(data)[2])``** variables in the data.
+There are **``r sprintf("%d", dim(data)[1])``** observations evenly divided across two years: 1992 and 1993, and **``r sprintf("%d", dim(data)[2])``** variables in the data.
 
-Examine the variables of key interest: apps represents the number of applications for admission. bowl, btitle, and finfour are indicators of athletic success. The three athletic performance variables are all lagged by one year. Intuitively, this is because we expect a school’s athletic success in the previous year to affect how many applications it recieves in the current year.
+**Examine the variables of key interest: apps represents the number of applications for admission. bowl, btitle, and finfour are indicators of athletic success. The three athletic performance variables are all lagged by one year. Intuitively, this is because we expect a school’s athletic success in the previous year to affect how many applications it recieves in the current year.**
+
+The year column is an integer as opposed to a label or level, so we may need to change that. An examination of the data doesn't reveal anything out of place. A scatterplot of applications by school for both years shows that schools received relatively similar numbers of applications for each year.
+
+```{r echo=FALSE}
+ggplot(data=data, aes(x=school, y=apps, fill=as.factor(year))) + geom_bar(stat="identity") + scale_fill_brewer() +
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) + theme(legend.title= element_blank())
+```
+
+When we examine the histogram of the apps variable we can see that it has a skewed distribution. 
+
+```{r echo=FALSE}
+hist(data$apps, main="Histogram of Applications", xlab="applications", breaks=50)
+
+```
+
+Taking a look at the lapps (log(apps)) variable correct the skewness of the applications variable distribution but the distribution almost appears bimodal.
+
+```{r echo=FALSE}
+hist(data$lapps, main="Histogram of log(applications)", xlab="log(applications)", breaks=50)
+```
+
+Exploring the Applications a little more we compare the lapps variable to the other continuous variables in the data set using a couple of scatterplot matrices. The first matrix compares applications, top 25% and student faculty ratio grouping by year. There don't appear to be any significant correlations between the variables on visual inspection. 
+
+```{r echo=FALSE}
+scatterplotMatrix(~ apps + top25 + stufac, groups=as.factor(data$year), by.groups=TRUE,data=data,
+                  main='Applications, Top 25%, Student-Faculty Ratio for 1992 & 1993')
+```
+
+
+The second matrix compares log(apps) with SAT scores. There is a very strong correlation between the verbal and math SAT scores but neither appears to correlate with the apps variable
+
+```{r echo=FALSE}
+
+scatterplotMatrix(~ apps + ver500 + mth500, groups=as.factor(data$year), by.groups=TRUE,data=data,
+                  main='Applications, SAT Verbal > 500, SAT Math > 500 for 1992 & 1993')
+```
+
+Exploring the athletic univariate data of bowl, btitle and finfour, showing a stats summary and density plot for each by year:
+
+```{r echo=FALSE}
+
+summary(data$bowl)
+densityplot(~ bowl | as.factor(year), data, main='Density Plot of Previous Bowl Game')
+summary(data$btitle)
+densityplot(~ btitle | as.factor(year), data, main='Density Plot of Previous Year Conf. Champs')
+summary(data$finfour) 
+densityplot(~ finfour | as.factor(year), data, main='Density Plot of Previous Year Final Four')
+summary(data$bball) 
+densityplot(~ bball | as.factor(year), data, main='Density Plot of Previous Year Conference & Final Four')
+summary(data$perf) 
+densityplot(~ perf | as.factor(year), data, main='Density Plot of Perf')
+```
+
+The bowl athletic success variable appears relatively even across the two years but the btitle and finfour variables are heavily skewed to 1992. This matches the expectation as set out in Question 1 in that previous year's atheletic indicators are more apparent for the current year's applications.
+
 
 ###Question 2:
 
-Note that the dataset is in long format, with a separate row for each year for each school. To prepare for a difference-in-difference analysis, transfer the dataset to wide-format. Each school should have a single row of data, with separate variables for 1992 and 1993. For example, you should have an apps.1992 variable and an apps.1993 variable to record the number of applications in either year.
+**Note that the dataset is in long format, with a separate row for each year for each school. To prepare for a difference-in-difference analysis, transfer the dataset to wide-format. Each school should have a single row of data, with separate variables for 1992 and 1993. For example, you should have an apps.1992 variable and an apps.1993 variable to record the number of applications in either year.**
 
 ```{r}
 # create wideData variable for wide format on year
 wideData <- reshape(data, timevar="year", idvar=c("school"), direction="wide")
 ```
 
-Create a new variable, clapps to represent the change in the log of the number of applications from 1992 to 1993. Examine this variable and its distribution.
-Which schools had the greatest increase and the greatest decrease in number of log applications?
+**Create a new variable, clapps to represent the change in the log of the number of applications from 1992 to 1993. Examine this variable and its distribution.
+Which schools had the greatest increase and the greatest decrease in number of log applications?**
 
 ```{r}
 # create clapps variable
 wideData$clapps<-log(wideData$apps.1993) - log(wideData$apps.1992)
+summary(wideData$clapps)
 # plot histogram
 hist(wideData$clapps, breaks=20, main="Histogram of Change in log(applications)",
      xlab="log(apps.1993) - log(apps.1992)")
@@ -68,12 +128,19 @@ dec <- wideData[cmin==wideData$clapps, c("school")]
 
 For the number of applications, **``r sprintf("%s", inc)``** has the greatest increase of **``r sprintf("%.2f", cmax)``**, and **``r sprintf("%s", dec)``** has the greatest decrease of **``r sprintf("%.2f", cmin)``**.
 
+```{r echo=FALSE}
+hist(dw$clapps, breaks=50, main="Histogram of Change in log(apps) from 1992 to 1993",
+     xlab="Change in log(apps)")
+
+ggplot(data=wideData, aes(x=school, y=clapps)) + geom_bar(stat="identity") + scale_fill_brewer() +
+  theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) + theme(legend.title= element_blank())
+```
 
 ###Question 3:
 
-Similarly to above, create three variables, cperf, cbball, and cbowl to represent the changes in the three athletic success variables. Since these variables are lagged by one year, you are actually computing the change in athletic success from 1991 to 1992.
+**Similarly to above, create three variables, _cperf_, _cbball_, and _cbowl_ to represent the changes in the three athletic success variables. Since these variables are lagged by one year, you are actually computing the change in athletic success from 1991 to 1992.
 
-Which of these variables has the highest variance?
+Which of these variables has the highest variance?**
 
 ```{r}
 #create cperf, cbball, and cbowl
@@ -82,11 +149,36 @@ wideData$cbball <- wideData$bball.1993 - wideData$bball.1992
 wideData$cbowl <- wideData$bowl.1993 - wideData$bowl.1992
 wideData$cbtitle <- wideData$btitle.1993 - wideData$btitle.1992
 wideData$cfinfour <- wideData$finfour.1993 - wideData$finfour.1992
-# check variance
-var(wideData[c("cperf", "cbball", "cbowl")])
 ```
 
-**cperf** has the highest variance of **$0.8243$**.
+Summary statistics and variances are calculated as:
+
+```{r}
+summary(wideData$cperf)
+summary(wideData$cbball)
+summary(wideData$cbowl)
+
+var(wideData[c('cperf','cbball','cbowl')])
+```
+
+From the variance calculation on each of the new variables it appears that the _cperf_ variable has the highest variance. However, the _cperf_ variance is not negatively correlated with the component years like _cbball_ and _cbowl_:
+
+```{r}
+var(wideData[c('cperf','perf.1992','perf.1993')])
+```
+
+There is a negative covariance between _cbball_ and _bball.1992_
+
+```{r}
+var(wideData[c('cbball','bball.1992','bball.1993')])
+```
+
+There is a negative covariance between _cbowl_ and _bowl.1992_: 
+
+```{r}
+var(wideData[c('cbowl','bowl.1992','bowl.1993')])
+```
+
 
 ###Question 4: 
 
@@ -100,11 +192,24 @@ You will estimate the first-difference equation,
 $$clapps_i=\beta_0+\beta_1cbowl_i+\beta_2cbtitle_i+\beta_3finfour_i+a_i+cu_i$$
 where $cu_i=u_{i1993}-u_{i1992}$ is the change in the idiosyncratic term from 1992 to 1993.
 
-a - What additional assumption is needed for this population model to be causal? Write this in mathematical notation and also explain it intuitively in English.
+**a) - What additional assumption is needed for this population model to be causal? Write this in mathematical notation and also explain it intuitively in English.**
 
-b - What additional assumption is needed for OLS to consistently estimate the first-difference model? Write this in mathematical notation and also explain it intuitively in English. Comment on whether this assumption is plausible in this setting.
+_The difference equation contains the $a_{i}$ term should be removed by taking the differences between the equation_
 
-$$E(u_{it}\mid cbowl, cbtitle, cfinfour)=0$$
+The additional assumption for causality is 
+$$cov(\Delta u,\Delta \mathbf{X_{i}}) = 0$$
+
+or stated differently:
+
+$$E(\Delta u_{i} \;\bigg|\; cbowl,cbtitle,cfinfour ) = 0$$
+
+There must be no correlation between the residual error term and any of the random variables. If there is correlation between $\Delta u$ and $\Delta \mathbf{X_{i}}$ then there will be bias in the estimators.
+
+**b) - What additional assumption is needed for OLS to consistently estimate the first-difference model? Write this in mathematical notation and also explain it intuitively in English. Comment on whether this assumption is plausible in this setting.**
+
+The additional assumption of OLS to consistently estimate the first difference model is there must be some variance in the random variables across the time periods.
+
+$$var(\Delta \mathbf{X}_{i}) > 0)$$
 
 ###Question 5:
 Estimate the first-difference model given above. Using the best practices descibed in class, interpret the slope coefficients and comment on their statistical significance and practical significance.
@@ -115,15 +220,33 @@ m5 <- lm(clapps ~ cbowl+cbtitle+cfinfour, data=wideData)
 summary(m5)
 ```
 
-From the coefficients, the improvement in bowl game has statistically significant impact on application number, which will increase **``r sprintf("%.2f%%", 100*m5$coefficients[2])``** if a scholl has played in a bowl game the previous year while hasn't in the year before. Earning a men's basketball conference title can also increase application by **``r sprintf("%.2f%%", 100*m5$coefficients[3])``**, but the effect is not statistically significant. Basketball is not as popular/influential as football? Finally the model suggests that being in Final Four would actually decrease the application by **``r sprintf("%.2f%%", 100*m5$coefficients[4])``**, this is clearly unreasonable and further model diagnostic is needed to evaluate the validity of the model.
+From the coefficients, the improvement in bowl game has statistically significant impact on application number, which will increase **``r sprintf("%.2f%%", 100*m5$coefficients[2])``** if a school has played in a bowl game the previous year while hasn't in the year before. Meanwhile, earning a men's conference title can also increase application by **``r sprintf("%.2f%%", 100*m5$coefficients[3])``**, but the effect is not statistically significant. Finally the model suggests that being in Final Four would actually decrease the application by **``r sprintf("%.2f%%", 100*m5$coefficients[4])``**, this is clearly unreasonable and further model diagnostic is needed to evaluate the validity of the model.
 
 ```{r}
 # model diagnostic
 plot(m5)
 ```
 
-it seems the model has violation in both zero-conditional mean and homoskedasticity. In addition, school #3 (**``r sprintf("%s", wideData$school[3])``**) has the number of an outlier.
+it seems the model has violation in both zero-conditional mean and homoskedasticity. In addition, school #3 (**arizona state**) has the number of an outlier.
+
+
+
+We check the joint hypothesis that : $H_{0}: \beta_{2}, \beta_{3} = 0$ using the F test between the unrestricted model RSS and the restricted model RSS.
+
+```{r }
+model1.r <- lm(clapps ~ cbowl, data=wideData)
+rss.r = sum(residuals(model1.r)^2)
+rss.ur = sum(residuals(model1)^2)
+
+linearHypothesis(model1, c("cbtitle","cfinfour"), vcov=vcovHC)
+```
+
+We can't reject the null hypothesis that $\beta_2$ and $\beta_3$ are statistically different than 0.
 
 ###Question 6:
-Test the joint signifance of the three indicator variables. This is the test of the overall model. What impact does the result have on your conclusions?
+**Test the joint signifance of the three indicator variables. This is the test of the overall model. What impact does the result have on your conclusions?**
 
+```{r }
+waldtest(model1, test='F', vcov=vcovHC)
+
+```
