@@ -57,7 +57,7 @@ Which schools had the greatest increase and the greatest decrease in number of l
 wideData$clapps<-log(wideData$apps.1993) - log(wideData$apps.1992)
 # plot histogram
 hist(wideData$clapps, breaks=20, main="Histogram of Change in log(applications)",
-     xlab="log(apps.1993) - log(apps.1992")
+     xlab="log(apps.1993) - log(apps.1992)")
 # greatest increase
 cmax <- max(wideData$clapps)
 inc <- wideData[cmax==wideData$clapps, c("school")]
@@ -80,6 +80,8 @@ Which of these variables has the highest variance?
 wideData$cperf <- wideData$perf.1993 - wideData$perf.1992
 wideData$cbball <- wideData$bball.1993 - wideData$bball.1992
 wideData$cbowl <- wideData$bowl.1993 - wideData$bowl.1992
+wideData$cbtitle <- wideData$btitle.1993 - wideData$btitle.1992
+wideData$cfinfour <- wideData$finfour.1993 - wideData$finfour.1992
 # check variance
 var(wideData[c("cperf", "cbball", "cbowl")])
 ```
@@ -90,7 +92,7 @@ var(wideData[c("cperf", "cbball", "cbowl")])
 
 We are interested in a population model,
 $$lapps_i=\gamma_0+\beta_0I_{1993}+\beta_1bowl_i+\beta_2btitle_i+\beta_3finfour_i+a_i+u_{it}$$
-Here, $I_1993$ is an indicator variable for the year $1993$. $a_i$ is the time-constant effect of school $i$. $u_{it}$ is the idiosyncratic effect of school $i$ at time $t$. The athletic success indicators are all lagged by one year as discussed above.
+Here, $I_{1993}$ is an indicator variable for the year $1993$. $a_i$ is the time-constant effect of school $i$. $u_{it}$ is the idiosyncratic effect of school $i$ at time $t$. The athletic success indicators are all lagged by one year as discussed above.
 
 At this point, we assume that (1) all data points are independent random draws from this population model (2) there is no perfect multicollinearity (3) $E(a_i) = E(u_{it}) = 0$
 
@@ -102,8 +104,25 @@ a - What additional assumption is needed for this population model to be causal?
 
 b - What additional assumption is needed for OLS to consistently estimate the first-difference model? Write this in mathematical notation and also explain it intuitively in English. Comment on whether this assumption is plausible in this setting.
 
+$$E(u_{it}\mid cbowl, cbtitle, cfinfour)=0$$
+
 ###Question 5:
 Estimate the first-difference model given above. Using the best practices descibed in class, interpret the slope coefficients and comment on their statistical significance and practical significance.
+
+```{r}
+# fit first-difference equation
+m5 <- lm(clapps ~ cbowl+cbtitle+cfinfour, data=wideData)
+summary(m5)
+```
+
+From the coefficients, the improvement in bowl game has statistically significant impact on application number, which will increase **``r sprintf("%.2f%%", 100*m5$coefficients[2])``** if a scholl has played in a bowl game the previous year while hasn't in the year before. Earning a men's basketball conference title can also increase application by **``r sprintf("%.2f%%", 100*m5$coefficients[3])``**, but the effect is not statistically significant. Basketball is not as popular/influential as football? Finally the model suggests that being in Final Four would actually decrease the application by **``r sprintf("%.2f%%", 100*m5$coefficients[4])``**, this is clearly unreasonable and further model diagnostic is needed to evaluate the validity of the model.
+
+```{r}
+# model diagnostic
+plot(m5)
+```
+
+it seems the model has violation in both zero-conditional mean and homoskedasticity. In addition, school #3 (**``r sprintf("%s", wideData$school[3])``**) has the number of an outlier.
 
 ###Question 6:
 Test the joint signifance of the three indicator variables. This is the test of the overall model. What impact does the result have on your conclusions?
