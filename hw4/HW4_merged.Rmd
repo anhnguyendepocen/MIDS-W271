@@ -67,7 +67,7 @@ hist(data$lapps, main="Histogram of log(applications)", xlab="log(applications)"
 Exploring the Applications a little more we compare the lapps variable to the other continuous variables in the data set using a couple of scatterplot matrices. The first matrix compares applications, top 25% and student faculty ratio grouping by year. There don't appear to be any significant correlations between the variables on visual inspection. 
 
 ```{r echo=FALSE}
-scatterplotMatrix(~ apps + top25 + stufac, groups=as.factor(data$year), by.groups=TRUE,data=data,
+spm(~ apps + top25 + stufac, groups=as.factor(data$year), by.groups=TRUE,data=data,
                   main='Applications, Top 25%, Student-Faculty Ratio for 1992 & 1993')
 ```
 

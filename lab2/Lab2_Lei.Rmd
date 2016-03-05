@@ -1,0 +1,346 @@
+---
+title: "W271 - Applied Regression and Time Series Analysis - Lab2"
+author: "Ron Cordell, Subhashini Raghunathan, Lei Yang"
+date: "March 7, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1: Broken Rulers
+
+You have a ruler of length 1 and you choose a place to break it using a uniform probability distribution. Let random variable X represent the length of the left piece of the ruler. X is distributed uniformly in [0, 1]. You take the left piece of the ruler and once again choose a place to break it using a uniform probability distribution. Let random variable Y be the length of the left piece from the second break.
+
+1). Find the conditional expectation of $Y$ given $X$, $E(Y|X)$.
+
+Given $x$, the pdf of $y$ is $f(y\mid x)=\frac{1}{x}$, thus
+
+$$E(Y\mid X)=\int_0^x{yf(y\mid x)dy}=\int_0^x{y\frac{1}{x}dy}=\frac{1}{x}\times \frac{y^2}{2}\Big|_0^x=\frac{x}{2}$$
+
+
+2). Find the unconditional expectation of $Y$ . One way to do this is to apply the law of iterated expectations, which states that $E(Y) = E(E(Y|X))$. The inner expectation is the conditional expectation computed above, which is a function of $X$. The outer expectation finds the expected value of this function.
+
+Apply the law of iterated expectations:
+
+$$E(Y)=E(E(Y\mid X))=E\big(\frac{X}{2}\big)=\frac{1}{2}E(X)=\frac{1}{2}\int_0^1{xf(x)dx}$$
+
+since $X$ is distributed uniformly in $[0,1]$, then $f(x)=1$, thus:
+
+$$E(Y)=\frac{1}{2}\int_0^1{xdx}=\frac{1}{4}x^2\Big|_0^1=\frac{1}{4}$$
+
+3). Write down an expression for the joint probability density function of $X$ and $Y$ , $f_{X,Y} (x, y)$.
+
+The joint probability density function of $X$ and $Y$:
+
+$$f_{X,Y}(x,y)=f(y\mid x)f(x)=\frac{1}{x}$$
+
+
+4). Find the conditional probability density function of $X$ given $Y$ , $f_{X|Y}$ .
+
+For any given $0<y<1$, the value of $x$ must be uniformly distributed in the interval of $(y,1)$, thus the conditional probability density function of $X$ given $Y$ would be:
+
+$$f_{X\mid Y}=\frac{1}{1-y}$$
+
+5). Find the expectation of $X$, given that $Y$ is $1/2$, $E(X |Y = 1/2)$
+
+In general
+
+$$E(X\mid Y)=\int_y^1{xf_{X\mid Y}dx}=\int_y^1{x\frac{1}{1-y}dx}=\frac{1}{1-y}\frac{x^2}{2}\Big|_y^1=\frac{\frac{1}{2}-\frac{y^2}{2}}{1-y}=\frac{1+y}{2}$$
+
+therefore $E(X\mid Y=\frac{1}{2})=\frac{1+\frac{1}{2}}{2}=\frac{3}{4}$
+
+\newpage
+
+# Question 2: Investing
+
+Suppose that you are planning an investment in three different companies. The payoff per unit you invest in each company is represented by a random variable. $A$ represents the payoff per unit invested in the first company, $B$ in the second, and $C$ in the third. $A$, $B$, and $C$ are independent of each other. Furthermore, $var(A) = 2var(B) = 3var(C)$.
+You plan to invest a total of one unit in all three companies. You will invest amount $a$ in the first company, $b$ in the second, and $c$ in the third, where $a,b,c \in [0,1]$ and $a+b+c = 1$. Find, the values of $a$, $b$, and $c$ that minimize the variance of your total payoff.
+
+**Solution**: The total payoff is $TP=aA+bB+cC$, and the variation is
+
+$$var(TP)=var(aA+bB+cC)=a^2var(A)+b^2var(B)+c^2var(C)+2abCov(A,B)+2bcCov(B,C)+2acCov(A,C)$$
+
+since they are 3 different companies, we assume no correlation in payoff per unit between any two of them, considering $var(A)=2var(B)=3var(C)$, we then have:
+
+$$var(TP)=(3a^2+\frac{3}{2}b^2+c^2)var(C)$$
+
+to minimize $var(TP)$, we need to minimize the coefficient $3a^2+\frac{3}{2}b^2+(1-a-b)^2$ given $c=1-a-b$, and take partial derivatives with respect to $a$ and $b$, and set them to zero:
+
+$$\begin{cases}
+    4a+b=1 \\
+    2a+5b=2
+  \end{cases}$$
+  
+we then have $a=\frac{1}{6}, b=\frac{1}{3}, c=\frac{1}{2}$, intuitively invest more in company with less variation.
+
+\newpage
+
+# Question 3: Turtles
+
+Next, suppose that the lifespan of a species of turtle follows a uniform dis- tribution over $[0,\theta]$. Here, parameter $\theta$ represents the unknown maximum lifespan. You have a random sample of $n$ individuals, and measure the lifespan of each individual $i$ to be $y_{i}$.
+
+1). Write down the likelihood function, $l(\theta)$ in terms of $y_{1}, y_{2}, ..., y_{n}$.
+
+With each sample $y$ lifespan uniformly distribute in $[0,\theta]$, probability density function is $f(y_i\mid\theta)=\frac{1}{\theta}$, the likelihood function is:
+
+$$\mathcal{L}(\theta)=\prod_{i=1}^n{f(y_i\mid\theta)}=\frac{1}{\theta^n}$$
+
+
+2). Based on the previous result, what is the maximum-likelihood estimator for $\theta$?
+
+To maxmize $\mathcal{L}(\theta)$ we need $\theta$ as small as possible, and yet it must be no smaller than any $y_i$, and such $\theta$ would be $y_{max}=max(y_i)$
+
+3). Let $\hat\theta_{ml}$ be the maximum likelihood estimator above. For the simple case that $n = 1$, what is the expectation of $\hat\theta_{ml}$ , given $\theta$?
+
+When $n=1$, the MLE of $\theta$ becomes $\hat{\theta_{ml}}=y_1$, thus the expectation given $\theta$ is:
+
+$$E\big(\hat{\theta_{ml}}\mid\theta\big)=E(y_1\mid\theta)=\int_0^\theta{f(y\mid\theta)ydy}=\int_0^\theta{\frac{1}{\theta}ydy}=\frac{1}{\theta}\frac{y^2}{2}\Big|_0^\theta=\frac{\theta}{2}$$
+
+4). Is the maximum likelihood estimator biased?
+
+Since $E\big(\hat{\theta_{ml}}\mid\theta\big)=\frac{\theta}{2}\neq\theta$, it's a biased estimator. 
+
+5). For the more general case that $n \geq 1$, what is the expectation of $\hat\theta_{ml}$?
+
+When $n\geq 1$, the expectation of MLE is $E\big(\hat{\theta_{ml}}\mid\theta\big)=\int_0^\theta{f(y_{max}\mid\theta)y_{max}dy}=\int_0^\theta{\frac{1}{\theta}ydy}=\frac{\theta}{2}$
+
+6). Is the maximum likelihood estimator consistent?
+
+the bias of the MLE in 5) is $\frac{\theta}{2}$ for any sample size, thus it's not consistent.
+
+**Note**: the unbiased estimation of $\theta$ can be obtained by using moment estimator: 
+
+$$E(Y)=\int_0^\theta{y\frac{1}{\theta}dy}=\frac{\theta}{2}=\bar{y}=\frac{1}{n}\sum_i{y_i} \rightarrow \hat{\theta}=\frac{2}{n}\sum_i{y_i}$$
+
+\newpage
+
+# Question 4. Classical Linear Model 1
+
+### Background
+
+The file WageData2.csv contains a dataset that has been used to quantify the impact of education on wage. One of the reasons we are proving another wage-equation exercise is that this area by far has the most (and most well-known) applications of instrumental variable techniques, the endogenity problem is obvious in this context, and the datasets are easy to obtain.
+
+### The Data
+
+You are given a sample of 1000 individuals with their wage, education level, age, working experience, race (as an indicator), father’s and mother’s education level, whether the person lived in a rural area, whether the person lived in a city, IQ score, and two potential instruments, called $z1$ and $z2$.
+
+The dependent variable of interest is $wage$ (or its transformation), and we are interested in measuring "return" to education, where return is measured in the increase (hopefully) in wage with an additional year of education.
+
+## Question 4.1
+
+
+Conduct an univariate analysis (using tables, graphs, and descriptive statistics found in the last 7 lectures) of all of the variables in the dataset.
+
+Also, create two variables: (1) natural log of wage (name it $logWage$) (2) square of experience (name it $experienceSquare$)
+
+```{r warning=FALSE}
+# load packages
+library(car)
+library(ggplot2)
+library(lattice)
+library(car)
+library(lmtest)
+library(sandwich)
+# load data
+setwd('~/GitHub/MIDS/MIDS-W271/lab2')
+data <- read.csv("WageData2.csv", header = TRUE)
+str(data)
+# show simple univariate stats for each variable
+summary(data)
+# create logWage and experienceSquare
+data$logWage <- log(data$wage)
+data$experienceSquare <- data$experience^2
+```
+
+Among the variables we are interested in for the analysis:
+
+```{r echo=FALSE}
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "green", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, use='complete.obs'))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+pairs(wage~education+experience+age, data=data, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='wage, education, experience, age')
+```
+
+
+## Question 4.2
+
+Conduct a bivariate analysis (using tables, graphs, descriptive statistics found in the last 7 lectures) of $wage$ and $logWage$ and all the other variables in the datasets.
+
+```{r echo=FALSE}
+pairs(logWage~experienceSquare+IQscore+dad_education+mom_education, data=data, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='logWage, experience2, IQ, parent education')
+```
+
+
+## Question 4.3
+
+Regress $log(wage)$ on education, experience, age, and raceColor.
+
+```{r}
+m4.3 <- lm(logWage~education+experience+age+raceColor, data=data)
+```
+
+
+1). Report all the estimated coefficients, their standard errors, t-statistics, F-statistic of the regression, $R^2$, $adjusted\; R^2$, and degrees of freedom.
+
+```{r}
+summary(m4.3)
+```
+
+
+2). Explain why the degrees of freedom takes on the specific value you observe in the regression output.
+
+The degrees of freedom is 996, which is the number of observations minus number of predictors
+
+
+3). Describe any unexpected results from your regression and how you would resolve them (if the intent is to estimate return to education, condition on race and experience).
+
+Regression coefficient of $age$ becomes $NA$ --> collinearity?
+
+```{r}
+m2 <- lm(logWage~education+education:experience+education:raceColor, data=data)
+summary(m2)
+```
+
+Take derivative of $wage$ with respect to $education$, we obtain return to education, condition on race and experience
+
+$$\frac{d(wage)}{d(education)}=0.0597973+0.0030623\times experience-0.0185244\times raceColor$$
+
+4). Interpret the coefficient estimate associated with education
+
+hold all other factors constant, 1 more year of education will increase wage by 6%
+
+5). Interpret the coefficient estimate associated with experience
+
+
+## Question 4.4
+
+Regress $log(wage)$ on education, experience, experienceSquare, and raceColor.
+
+```{r}
+m4.4 <- lm(logWage~education+experience+experienceSquare+raceColor, data=data)
+summary(m4.4)
+```
+
+
+1). Plot a graph of the estimated effect of experience on wage.
+
+Take derivative of $wage$ with respect to $experience$:
+
+$$\tag{4.4}\frac{d(logWage)}{d(experience)}=0.092493-0.005756\times experience$$
+
+```{r}
+data$effect <- 0.092493-0.005756*data$experience
+plot(data$experience, data$effect, main = 'Estimated effect of experience on wage')
+```
+
+
+2). What is the estimated effect of experience on wage when experience is 10 years?
+
+when experience is 10 years, plug in equation $4.4$, we have the effect of 0.034933.
+
+the more experience one has, the smaller effect on the wage increase
+
+
+## Question 4.5
+
+Regress $logWage$ on education, experience, experienceSquare, raceColor, dad_education, mom_edu rural, city.
+
+1). What are the number of observations used in this regression? Are missing values a problem? Analyze the missing values, if any, and see if there is any discernible pattern with wage, education, experience, and raceColor.
+
+
+
+2). Do you just want to "throw away" these observations?
+
+
+
+3). How about blindly replace all of the missing values with the average of the observed values of the corresponding variable? Rerun the original regression using all of the observations?
+
+
+
+4). How about regress the variable(s) with missing values on education, experience, and raceColor, and use this regression(s) to predict (i.e. "impute") the missing values and then rerun the original regression using all of the observations?
+
+
+
+5). Compare the results of all of these regressions. Which one, if at all, would you prefer?
+
+
+## Question 4.6
+
+1). Consider using $z_{1}$ as the instrumental variable (IV) for education. What assumptions are needed on $z_{1}$ and the error term (call it, $u$)?
+
+
+
+2). Suppose $z_{1}$ is an indicator representing whether or not an individual lives in an area in which there was a recent policy change to promote the importance of education. Could $z_{1}$ be correlated with other unobservables captured in the error term?
+
+
+
+3). Using the same specification as that in question 4.5, estimate the equation by 2SLS, using both $z_{1}$ and $z_{2}$ as instrument variables. Interpret the results. How does the coefficient estimate on education change?
+
+
+
+\newpage
+
+# Question 5. Classical Linear Model 2
+
+
+The dataset, ”wealthy candidates.csv”, contains candidate level electoral data from a developing country. Politically, each region (which is a subset of the country) is divided in to smaller electoral districts where the candidate with the most votes wins the seat. This dataset has data on the financial wealth and electoral performance (voteshare) of electoral candidates. We are interested in understanding whether or not wealth is an electoral advantage. In other words, do wealthy candidates fare better in elections than their less wealthy peers?
+
+1). Begin with a parsimonious, yet appropriate, specification. Why did you choose this model? Are your results statistically significant? Based on these results, how would you answer the research question? Is there a linear relationship between wealth and electoral performance?
+
+
+
+2). A team-member suggests adding a quadratic term to your regression. Based on your prior model, is such an addition warranted? Add this term and interpret the results. Do wealthier candidates fare better in elections?
+
+
+
+3). Another team member suggests that it is important to take into account the fact that different regions have different electoral contexts. In particular, the relationship between candidate wealth and electoral performance might be different across states. Modify your model and report your results. Test the hypothesis that this addition is not needed.
+
+
+
+4). Return to your parsimonious model. Do you think you have found a causal and unbiased estimate? Please state the conditions under which you would have an unbiased and causal estimates. Do these conditions hold?
+
+
+
+5). Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
+
+
+
+\newpage
+
+# Question 6. Classical Linear Model 3
+
+Your analytics team has been tasked with analyzing aggregate revenue, cost and sales data, which have been provided to you in the R workspace/data frame retailSales.Rdata.
+
+Your task is two fold. First, your team is to develop a model for predicting (forecasting) revenues. Part of the model development documentation is a backtesting exercise where you train your model using data from the first two years and evaluate the model's forecasts using the last two years of data.
+
+Second, management is equally interested in understanding variables that might affect revenues in support of management adjustments to operations and revenue forecasts. You are also to identify factors that affect revenues, and discuss how useful management's planned revenue is for forecasting revenues.
+
+&nbsp;&nbsp;&nbsp;&nbsp;Your analysis should address the following:
+
+*) Exploratory Data Analysis: focus on bivariate and multivariate relationships
+*) Be sure to assess conditions and identify unusual observations
+*) Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+*) Explain what interaction terms in your model mean in context sup- ported by data visualizations
+*) Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
+*) Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
+
+
