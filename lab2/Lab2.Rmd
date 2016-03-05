@@ -1,0 +1,606 @@
+---
+title: "W271 Lab2"
+author: "Dr. Who"
+date: "February 27, 2016"
+output: pdf_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1: Broken Rulers
+
+You have a ruler of length 1 and you choose a place to break it using a uniform probability distribution. Let random variable X represent the length of the left piece of the ruler. X is distributed uniformly in [0, 1]. You take the left piece of the ruler and once again choose a place to break it using a uniform probability distribution. Let random variable Y be the length of the left piece from the second break.
+
+1. Find the conditional expectation of $Y$ given $X$, $E(Y|X)$.
+
+$$f(x) = 
+\begin{cases}
+1, & 0 \leq x \leq 1 \\
+0, & x < 0 \text{ or } x > 1
+\end{cases}$$
+
+$$E(X) = \int_{-\infty}^{\infty}x f(x) dx$$
+
+$$E(X) = \int_{0}^{1}x dx = \frac{1}{2}x^{2}\Big|_{0}^{1} = \frac{1}{2} - 0 = \frac{1}{2}$$
+
+Now we take the left part of the ruler, assuming the ruler starts at 0 and the left half has length $E(X)$. Breaking the left part of the ruler at position Y which has a uniform probability distribution:
+
+$$f(y) = 
+\begin{cases}
+\frac{1}{E(X)}, & 0 \leq y \leq E(X) \\
+0, & 1 y < 0 \text{ or } y > E(X)
+\end{cases}$$
+
+$$E(Y) = \int_{-\infty}^{\infty}y f(y) dy$$
+
+$$E(Y) = \int_{0}^{E(X)}\frac{1}{E(X)}\;y\;dy = \frac{1}{2}\frac{1}{E(X)}y^{2}\Big|_{0}^{E(X)} = \frac{1}{2}\frac{1}{E(X)}E(X)^{2} = \frac{1}{2}E(X)$$
+
+Therefore, since $E(X) = \frac{1}{2}$ and since $E(Y)$ is conditional on X to begin with:
+
+$$E(Y \big|X) = \frac{1}{2}E(X)$$
+
+2. Find the unconditional expectation of $Y$ . One way to do this is to apply the law of iterated expectations, which states that $E(Y) = E(E(Y|X))$. The inner expectation is the conditional expectation computed above, which is a function of $X$. The outer expectation finds the expected value of this function.
+
+$$E(Y) = E(E(Y\big|X))$$
+
+$$E(Y\big|X) = \frac{1}{2}E(X) \text{ therefore } E(Y) = E(\frac{1}{2}E(X))$$
+
+$$\text{Since } E(X) = \frac{1}{2} \text{ we have: }E(Y) = E(\frac{1}{2}\times\frac{1}{2}) = \frac{1}{4}$$
+
+3. Write down an expression for the joint probability density function of $X$ and $Y$ , $f_{X,Y} (x, y)$.
+
+$$f_{X,Y}(x,y) = \begin{cases}\frac{1}{x}, & 0 \leq y \leq x\\0, & y<0 \text{ or } y>1\end{cases}$$
+
+4. Find the conditional probability density function of $X$ given $Y$ , $f_{X|Y}$ .
+
+The conditional probability function of ${X}$ given ${Y}$ is given by the joint probability density function divided by the marginal probability density function:
+
+$$f_{X}(x | Y=y) = \frac{f_{X,Y}(x,y)}{f_{Y}(y)}$$
+
+$$f_{Y}(y) = \begin{cases}
+\frac{1}{a}, & 0 \leq y \leq a \\
+0, & y < 0 \text{ or } y > a
+\end{cases}$$
+
+5. Find the expectation of $X$, given that $Y$ is $1/2$, $E(X |Y = 1/2)$
+
+
+\newpage
+
+# Question 2: Investing
+
+Suppose that you are planning an investment in three different companies. The payoff per unit you invest in each company is represented by a random variable. $A$ represents the payoff per unit invested in the first company, $B$ in the second, and $C$ in the third. $A$, $B$, and $C$ are independent of each other. Furthermore, $var(A) = 2var(B) = 3var(C)$.
+You plan to invest a total of one unit in all three companies. You will invest amount $a$ in the first company, $b$ in the second, and $c$ in the third, where $a,b,c \in [0,1]$ and $a+b+c = 1$. Find, the values of $a$, $b$, and $c$ that minimize the variance of your total payoff.
+
+
+
+\newpage
+
+# Question 3: Turtles
+
+Next, suppose that the lifespan of a species of turtle follows a uniform distribution over $[0,\theta]$. Here, parameter $\theta$ represents the unknown maximum lifespan. You have a random sample of $n$ individuals, and measure the lifespan of each individual $i$ to be $y_{i}$.
+
+1. Write down the likelihood function, $l(\theta)$ in terms of $y_{1}, y_{2}, ..., y_{n}$.
+
+$$f(y|\theta) = \begin{cases}
+\frac{1}{\theta}, & 0 \leq y \leq \theta \\
+0, & y < 0 \text{ or } y > \theta
+\end{cases}$$
+
+$$L(\theta) = \prod_{i=1}^{n}f(y;\theta) = \begin{cases}
+\theta^{-n}, & 0 \leq y_{i} \leq \theta \\
+0, & y_{i} < 0 \text{ or } y_{i} > \theta
+\end{cases}$$
+
+2. Based on the previous result, what is the maximum-likelihood estimator for $\theta$?
+
+Since $L(\theta) = \theta^{-n}$ for $0 \leq y_{i} \leq \theta$ then it follows that $\theta \geq y_{i}$ for all $i$.
+
+Therefore the MLE for $\theta$ is $\hat{\theta} = max(x_{1},x_{2},...,x_{n})$
+
+3. Let $\hat\theta_{ml}$ be the maximum likelihood estimator above. For the simple case that $n = 1$, what is the expectation of $\hat\theta_{ml}$ , given $\theta$?
+
+For $n=1$ we have $\hat{\theta}_{ml} = x_{1}$, or the value of the sample.
+
+4. Is the maximum likelihood estimator biased?
+
+A lifespan with a uniform distribution means that any lifespan is equally likely up to some value, $\theta$. However, $\theta$ is always greater than the maximum $x_{i}$, which implies that $\hat{\theta}_{ml}$ will always underestimate the true $\theta$. Therefore the estimator is biased.
+
+5. For the more general case that $n \geq 1$, what is the expectation of $\hat\theta_{ml}$?
+
+$$E[\hat\theta_{ml}]=E[max(x_{1},...,x_{n})]=\theta$$
+
+6. Is the maximum likelihood estimator consistent?
+
+For very large $n$ the MLE would approach $\theta$, so yes it is consistent.
+
+\newpage
+
+# Question 4. Classical Linear Model 1
+
+### Background
+
+The file WageData2.csv contains a dataset that has been used to quantify the impact of education on wage. One of the reasons we are proving another wage-equation exercise is that this area by far has the most (and most well-known) applications of instrumental variable techniques, the endogenity problem is obvious in this context, and the datasets are easy to obtain.
+
+### The Data
+
+You are given a sample of 1000 individuals with their wage, education level, age, working experience, race (as an indicator), father’s and mother’s education level, whether the person lived in a rural area, whether the person lived in a city, IQ score, and two potential instruments, called $z1$ and $z2$.
+
+The dependent variable of interest is $wage$ (or its transformation), and we are interested in measuring "return" to education, where return is measured in the increase (hopefully) in wage with an additional year of education.
+
+## Question 4.1
+
+
+Conduct an univariate analysis (using tables, graphs, and descriptive statistics found in the last 7 lectures) of all of the variables in the dataset.
+
+Also, create two variables: (1) natural log of wage (name it $logWage$) (2) square of experience (name it $experienceSquare$)
+
+```{r echo=FALSE}
+library(car)
+library(lmtest)
+library(sandwich)
+library(psych)
+library(ivpack)
+```
+
+```{r}
+df1 <- read.csv('WageData2.csv')
+```
+
+```{r}
+str(df1)
+summary(df1)
+```
+
+```{r}
+mhist <- df1[,c('wage','logWage','education','experience','age',
+                'dad_education','mom_education','raceColor','rural',
+                'city','IQscore')]
+par(mar=c(0.5,0.5,0.5,0.5))
+multi.hist(mhist, main='')
+```
+
+Examine the _wage_ variable
+
+```{r}
+summary(df1$wage)
+hist(df1$wage, breaks=50, main='Histogram of wage', xlab='wage')
+boxplot(df1$wage, main='Box Plot of Wage', ylab='Dollars')
+```
+
+Wage is right-skewed with a long tail. This will cause issues without transformation or perhaps using the _logWage_ variable instead.
+
+Example the _logWage_ variable.
+
+```{r}
+summary(df1$logWage)
+hist(df1$logWage, breaks=50, main='Histogram of logWage', xlab='logWage')
+boxplot(df1$logWage, main='Box Plot of log(Wage)', ylab='log(Dollars)')
+```
+
+The _logWage_ variable appears to correct most of the issues with the _wage_ variable.
+
+Examine the _education_ variable
+
+
+```{r}
+summary(df1$education)
+hist(df1$education, breaks=18, main='Histogram of education', xlab='education (years)')
+boxplot(df1$education, main='Box Plot of Education', ylab='Years')
+```
+
+The _education_ variable appears to be left-skewed with a long tail on the left. It also has a very strong peak at 12 years, corresponding to high school completion. There is a second, smaller peak at 16 years, corresponding to completing undergraduate studies.
+
+Examine the _age_ variable.
+
+```{r}
+summary(df1$age)
+hist(df1$age, breaks=10, main='Histogram of age', xlab='age (years)')
+boxplot(df1$age, main='Box Plot of Age', ylab='Years')
+```
+
+The distribution of the _age_ samples are left-skewed with a strong peak at 24 years. Therefore there will be some weighting of this analysis towards recent college graduates or high school graduates with 6 years of experience.
+
+Examine the _raceColor_ indicator variable.
+
+```{r}
+summary(df1$raceColor)
+
+```
+
+The _raceColor_ variable is an indicator variable with a mean of 0.238, indicating nearly 25% non-caucasion samples in the data set.
+
+Examine the _dad_eductation_ variable
+
+```{r}
+summary(df1$dad_education)
+hist(df1$dad_education, breaks=20, main='Histogram of dad_education', xlab='dad_education (years)')
+boxplot(df1$dad_education, main='Box Plot of Fathers Education', ylab='Years')
+```
+
+The _dad_education_ variable shows a somewhat symmetrical distribution except for two strong peaks, one at 8 years and one at 12 years. This reflects the relative generation and time period of the data set when eduction beyond high school was rare and it was common to leave school after 8th grade. Nearly 24% of the samples of this variable are NA.
+
+Examine _mom_education_ variable
+
+```{r}
+summary(df1$mom_education)
+hist(df1$mom_education, breaks=20, main='Histogram of mom_education', xlab='mom_education (years)')
+boxplot(df1$mom_education, main='Box Plot of Mothers Education', ylab='Years')
+```
+
+The _mom_education_ variable is similar to the _dad_education_ variable except the 8 year peak is much less pronounced. There are 12.8% NA's in variable samples. The box plot shows that there are definite issues with the distribution as the mean is also the first quartile.
+
+Examine the _rural_, _city_  indicator variables
+
+```{r}
+summary(df1$rural)
+summary(df1$city)
+
+```
+
+The _rural_ vs. _city_ percentages are 39.1% and 71.2% respectively.
+
+Examine the _z1_ and _z2_ indicator variables
+
+```{r}
+summary(df1$z1)
+summary(df1$z2)
+```
+
+The _z1_ and _z2_ variables are instrument variable candidates.
+
+Examine _IQScore_ variable
+
+```{r}
+summary(df1$IQscore)
+hist(df1$IQscore, breaks=50, main='Histogram of IQScore', xlab='IQScore')
+boxplot(df1$IQscore, main='Box Plot of IQ Score', ylab='IQ Score')
+```
+
+The _IQScore_ variable appears to be symmetric near the mean.
+
+Create variables for the natural log of wage and the square of experience.
+
+```{r}
+df1$lnWage <- log(df1$wage)
+df1$experienceSquare <- df1$experience*df1$experience
+```
+
+## Question 4.2
+
+Conduct a bivariate analysis (using tables, graphs, descriptive statistics found in the last 7 lectures) of $wage$ and $logWage$ and all the other variables in the datasets.
+
+Examine _wage_, _education_, _experience_, _experienceSquare_ in a scatterplot matrix
+
+```{r}
+scatterplotMatrix(~ wage + education + experience + experienceSquare, data=df1)
+```
+
+Examing _logWage_, _age_, _dad_education_, _mom_education_
+
+```{r}
+scatterplotMatrix(~ logWage + age + dad_education + mom_education, data=df1)
+```
+
+Examine _logWage_, _education_, _experience_, _raceColor_
+
+```{r}
+scatterplotMatrix(~ logWage + education + IQscore, data=df1)
+```
+
+
+```{r}
+plot(df1$education, df1$logWage, col=ifelse(df1$raceColor==0,'cyan','magenta'))
+```
+
+
+
+
+## Question 4.3
+
+Regress $log(wage)$ on education, experience, age, and raceColor.
+
+```{r}
+model4.3 <- lm(logWage ~ education + experience + age + raceColor, data=df1)
+```
+
+1. Report all the estimated coefficients, their standard errors, t-statistics, F-statistic of the regression, $R^2$, $adjusted\; R^2$, and degrees of freedom.
+
+```{r}
+summary(model4.3)
+par(mfrow = c(2,2))
+plot(model4.3, sub.caption="Model Diagnostic Plots")
+```
+
+
+2. Explain why the degrees of freedom takes on the specific value you observe in the regression output.
+
+There are 996 degrees of freedom in the regression output, which is the size of the data set less the number of estimated parameters of the model and the intercept: $DF = 1000 - 3 - 1 = 996$ 
+
+3. Describe any unexpected results from your regression and how you would resolve them (if the intent is to estimate return to education, condition on race and experience).
+
+The age variable is linearly related to one of the other variables which is why the coefficient for age is NA in the model summary. The model actually only estimates the coefficients for eduction, experience, raceColor and the intercept. To resolve this particular issue we drop the variable from the model, which the lm() function has done for us.
+
+The raceColor coefficient is also a surprise at how large it is, coming in as a 26% decrease in wages, controlling for education and experience. The other coefficients are much less at 8% increase per year of eduction controlling for raceColor and experience, and 3.5% increase in wages controlling for education and raceColor. To understand the size of the coefficient for raceColor I would first analyze its contribution to the explanation of the variance. I would also investigate the interaction of race with education and race with experience to gain more insight how those factors may correlate to each other.
+
+4. Interpret the coefficient estimate associated with education
+
+The coefficient associated with education results in a 7.9% increase in wages controlling for experience and raceColor, and is highly statistically significant.
+
+5. Interpret the coefficient estimate associated with experience
+
+The coefficient associated with experience results in a 3.5% increase in wages controlling for education and raceColor, and is highly statistically significant.
+
+## Question 4.4
+
+Regress $log(wage)$ on education, experience, experienceSquare, and raceColor.
+
+```{r}
+model4.4 <- lm(wage ~ education + experience + experienceSquare + raceColor, data=df1)
+summary(model4.4)
+par(mfrow = c(2,2))
+plot(model4.4, sub.caption="Model Diagnostic Plots")
+```
+
+
+1. Plot a graph of the estimated effect of experience on wage.
+
+```{r}
+plot(x=NULL, y=NULL, xlim=c(0,30),ylim=c(0,1500), ylab='$', xlab='Years', main='Plot of Experience Coefficient')
+abline(a = coef(model4.4)[1], b = coef(model4.4)[3], lwd = 2, col = "red")
+abline(v = 10, lwd = 2, col = "blue")
+
+```
+
+
+2. What is the estimated effect of experience on wage when experience is 10 years?
+
+```{r}
+coef(model4.4)[1]+10*coef(model4.4)[3]
+```
+
+$213.26 increase in wage for 10 years of experience
+
+## Question 4.5
+
+Regress $logWage$ on _education_, _experience_, _experienceSquare_, _raceColor_, _dad_education_, _mom_education_, _rural_, _city_.
+
+```{r}
+model4.5 <- lm(logWage ~ education + experience + experienceSquare + raceColor +
+                 dad_education + mom_education + rural + city, data=df1)
+summary(model4.5)
+par(mfrow = c(2,2))
+plot(model4.5, sub.caption="Model Diagnostic Plots")
+```
+
+
+1. What are the number of observations used in this regression? Are missing values a problem? Analyze the missing values, if any, and see if there is any discernible pattern with wage, education, experience, and raceColor.
+
+There are 1000 - 277 = 723 observations.
+
+
+```{r}
+scatterplot(df1$education, df1$wage, groups=df1$raceColor, by.groups=TRUE, 
+            xlab='Years', ylab='$', main='Scatterplot of Wage and Education',
+            legend.title='race', col=c('magenta','cyan'))
+```
+```{r}
+scatterplot(df1$education, df1$experience, groups=df1$raceColor, by.groups=TRUE, 
+            xlab='Education Years', ylab='Experience Years', main='Scatterplot Education and Experience',
+            legend.title='race', col=c('magenta','cyan'))
+```
+```{r}
+scatterplot(df1$wage, df1$raceColor, xlab='Years', ylab='$', main='Scatterplot Education and Experience')
+```
+
+There is a fixed linear relationship between education and experience.
+
+```{r}
+library(mice)
+library(VIM)
+aggr_plot <- aggr(df1[,c('education','wage','dad_education','mom_education',
+                         'age','experience','raceColor','rural','city')], 
+                  col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, 
+                  labels=names(data), cex.axis=.7, gap=3, 
+                  ylab=c("Histogram of missing data","Pattern"))
+```
+
+Over 25% of the dad_education data is missing, and about 12% of the mom_education data.
+
+
+2. Do you just want to "throw away" these observations?
+
+The NA observations have value but we're talking about a large portion of the values for those variables.
+
+3. How about blindly replace all of the missing values with the average of the observed values of the corresponding variable? Rerun the original regression using all of the observations?
+
+One could replace the NA values with the mean of the variable but additional bias is introduced on top of what bias may already exist. Adding a large number of mean values will also reduce the variance.
+
+4. How about regress the variable(s) with missing values on education, experience, and raceColor, and use this regression(s) to predict (i.e. "impute") the missing values and then rerun the original regression using all of the observations?
+
+5. Compare the results of all of these regressions. Which one, if at all, would you prefer?
+
+```{r}
+summary(model4.3)
+summary(model4.4)
+summary(model4.5)
+```
+
+I prefer the first model, from Question 4.3 because it has the highest F-statistic even though it doesn't have the highest Adjusted $R^2$. It is also the simpler model with the fewest parameters (most parsimonious).
+
+## Question 4.6
+
+1. Consider using $z_{1}$ as the instrumental variable (IV) for education. What assumptions are needed on $z_{1}$ and the error term (call it, $u$)?
+
+The assumptions to be satisfied are $cov(z_{1},u)=0$ and that if the variable for which we want to use $z_{i}$ as an indicator is $x$ then $cov(x,z_{1}) \neq 0$
+
+2. Suppose $z_{1}$ is an indicator representing whether or not an individual lives in an area in which there was a recent policy change to promote the importance of education. Could $z_{1}$ be correlated with other unobservables captured in the error term?
+
+There are several scenarios in which $z_{1}$ could be correlated with the error term, $u$.
+- Adjacent regions and policy may have an effect, especially in regions with more industry or higher paying jobs. There is more money to be spent on education in that case. There is no per capita expenditure on education variable in the data set so this would be in the error term.
+- Local and regional attitudes can also have an effect in the error term, such as whether the region contains a college or university town. People in these localities may have a propensity to favor emphasis on education. 
+
+3. Using the same specification as that in question 4.5, estimate the equation by 2SLS, using both $z_{1}$ and $z_{2}$ as instrument variables. Interpret the results. How does the coefficient estimate on education change?
+
+First let's check the relationship between $z_{1}$ zand $z_{2}$ on the outcome variable.
+
+```{r}
+model4.6_z1 <- lm(logWage ~ z1, data=df1)
+summary(model4.6_z1)
+```
+
+There is a statistically significant relationship between $z_{1}$ and _education_.
+
+```{r}
+model4.6_z2 <- lm(logWage ~ z2, data=df1)
+summary(model4.6_z2)
+```
+
+There is a highly statistically significant relationship between $z_{2}$ and _education_.
+
+Performing a 2SLS regression using both $z_{1}$ and $z_{2}$
+
+```{r}
+model4.6_iv <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+                     + dad_education + mom_education + rural + city | z1 + z2, data=df1)
+robust.se(model4.6_iv)
+```
+
+
+\newpage
+
+# Question 5. Classical Linear Model 2
+
+
+The dataset, ”wealthy candidates.csv”, contains candidate level electoral data from a developing country. Politically, each region (which is a subset of the country) is divided in to smaller electoral districts where the candidate with the most votes wins the seat. This dataset has data on the financial wealth and electoral performance (voteshare) of electoral candidates. We are interested in understanding whether or not wealth is an electoral advantage. In other words, do wealthy candidates fare better in elections than their less wealthy peers?
+
+Data Exploration
+
+```{r}
+df2 <- read.csv('wealthy_candidates.csv')
+str(df2)
+summary(df2)
+```
+
+
+```{r}
+df2$logWealth <- log(df2$absolute_wealth)
+df2$logUrb<- log(df2$urb)
+par(mar=c(3,3,3,3))
+mhist <- df2[,c('urb','logUrb','lit','voteshare','absolute_wealth', 'logWealth')]
+mhist$region <- as.numeric(df2$region)
+multi.hist(mhist)
+
+```
+
+We can see that _urb_ and _absolute_wealth_ have issues with distribution. Creating a new variable, _logUrb_, as the log(urb) does help with the distribution. However, _absolute_wealth_ doesn't get as much help from this treatment.
+
+If we examing the _absolute_wealth_ variable we can see there are a large number of 2.0e+00 values, which is also shown as the minimum value in the summary.
+
+```{r}
+sum(na.omit(df2$absolute_wealth==2.0))
+sum(na.omit(df2$absolute_wealth > 2.0))
+sum(na.omit(df2$absolute_wealth > 200.0))
+```
+
+There are 435 entries with a value of 2.0 and there are 2062 entries with values greater than 2.0 and also greater than 200.0. The count starts dropping slightly around 2000.0. There are also 162 NA values.
+
+We don't have any information about how this value for _absolute_wealth_ came to be so our best course of action is to set it to NA.
+
+```{r}
+df2$wealth<-df2$absolute_wealth
+df2$wealth[df2$wealth==2.0] <- NA
+df2$logWealth <- log(df2$wealth)
+summary(df2)
+par(mar=c(3,3,3,3))
+mhist <- df2[,c('logUrb','lit','voteshare', 'logWealth')]
+multi.hist(mhist)
+```
+
+```{r}
+scatterplotMatrix(~voteshare + logWealth + lit + logUrb, data=df2)
+```
+
+
+1. Begin with a parsimonious, yet appropriate, specification. Why did you choose this model? Are your results statistically significant? Based on these results, how would you answer the research question? Is there a linear relationship between wealth and electoral performance?
+
+```{r}
+model5.1 <- lm(voteshare ~ logWealth, data=df2)
+coeftest(model5.1, vcov=vcovHC)
+```
+
+There is a linear relationship between _logWealth_ and _voteshare_, statistically significant at the .002 level.
+
+The most parsimonious and direct model is the simple OLS model that expresses the relationship between vote share and wealth.
+
+2. A team-member suggests adding a quadratic term to your regression. Based on your prior model, is such an addition warranted? Add this term and interpret the results. Do wealthier candidates fare better in elections?
+
+We can use a quadratic of wealth to measure marginal effects.
+
+```{r}
+model5.1.2 <- lm(voteshare ~ logWealth + I(logWealth**2), data=df2)
+coeftest(model5.1.2, vcov=vcovHC)
+```
+
+The results indicate a stastistically significant relationship at the .04 level for $log(wealth)^2$. The coefficients suggest a diminishing return to voteshare and the point at which the return to voteshare becomes 0 is
+
+```{r}
+abs(coef(model5.1.2)[2]/2*coef(model5.1.2)[3])
+```
+
+3. Another team member suggests that it is important to take into account the fact that different regions have different electoral contexts. In particular, the relationship between candidate wealth and electoral performance might be different across states. Modify your model and report your results. Test the hypothesis that this addition is not needed.
+
+Using the region variable we can convert it to a set of dummy variables: _region1_, _region2_, _region3_
+
+```{r}
+df2$region1 <- ifelse(df2$region=="Region 1",1,0)
+df2$region2 <- ifelse(df2$region=="Region 2",1,0)
+df2$region3 <- ifelse(df2$region=="Region 3",1,0)
+model5.1.3 <- lm(voteshare ~ logWealth + region2 + region3 + region1, data=df2)
+coeftest(model5.1.3, vcov=vcovHC)
+
+```
+
+All the coefficients of the model are highly significant. 
+
+Need to interpret what logWealth as a parameter means in this case.
+
+
+4. Return to your parsimonious model. Do you think you have found a causal and unbiased estimate? Please state the conditions under which you would have an unbiased and causal estimates. Do these conditions hold?
+
+
+
+5. Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
+
+
+
+\newpage
+
+# Question 6. Classical Linear Model 3
+
+Your analytics team has been tasked with analyzing aggregate revenue, cost and sales data, which have been provided to you in the R workspace/data frame retailSales.Rdata.
+
+Your task is two fold. First, your team is to develop a model for predicting (forecasting) revenues. Part of the model development documentation is a backtesting exercise where you train your model using data from the first two years and evaluate the model's forecasts using the last two years of data.
+
+Second, management is equally interested in understanding variables that might affect revenues in support of management adjustments to operations and revenue forecasts. You are also to identify factors that affect revenues, and discuss how useful management's planned revenue is for forecasting revenues.
+
+&nbsp;&nbsp;&nbsp;&nbsp;Your analysis should address the following:
+
+* Exploratory Data Analysis: focus on bivariate and multivariate relationships
+* Be sure to assess conditions and identify unusual observations
+* Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+* Explain what interaction terms in your model mean in context sup- ported by data visualizations
+* Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
+* Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
+
+## Exploratory Data Analysis
+
+```{r}
+load('retailSales.Rdata')
+str(retailSales)
+```
+
+
