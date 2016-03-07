@@ -169,7 +169,7 @@ Conduct an univariate analysis (using tables, graphs, and descriptive statistics
 
 Also, create two variables: (1) natural log of wage (name it $logWage$) (2) square of experience (name it $experienceSquare$)
 
-```{r message=FALSE}
+```{r message=FALSE, echo=FALSE}
 library(car)
 library(lmtest)
 library(sandwich)
@@ -532,7 +532,7 @@ stargazer(model4.3, model4.4, model4.5, model4.5.na, model4.5.nai,
 
 ```
 
-I prefer the first model, from Question 4.3 because it has the highest F-statistic even though it doesn't have the highest Adjusted $R^2$. It is also the simpler model with the fewest parameters (most parsimonious).
+The first model is preferred from Question 4.3 because it has the highest F-statistic even though it doesn't have the highest Adjusted $R^2$. It is also the simpler model with the fewest parameters (most parsimonious).
 \newpage
 
 ## Question 4.6
@@ -638,6 +638,7 @@ multi.hist(mhist)
 ```{r fig.width=6.5, fig.height=8}
 scatterplotMatrix(~voteshare + logWealth + lit + logUrb, data=df2)
 ```
+\newpage
 
 1. Begin with a parsimonious, yet appropriate, specification. Why did you choose this model? Are your results statistically significant? Based on these results, how would you answer the research question? Is there a linear relationship between wealth and electoral performance?
 
@@ -658,6 +659,9 @@ We can use a quadratic of wealth to measure marginal effects.
 df2$lwealthSquared <- df2$logWealth**2
 model5.1.2 <- lm(voteshare ~ logWealth + lwealthSquared, data=df2)
 coeftest(model5.1.2, vcov=vcovHC)
+```
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
 plot(model5.1.2)
 ```
 
@@ -680,11 +684,12 @@ The _region_ variable is already factored so we can use it in the model as is, w
 
 ```{r}
 model5.1.3 <- lm(voteshare ~ logWealth + region, data=df2)
-plot(model5.1.3)
+coeftest(model5.1.3, vcov=vcovHC)
 ```
 
-```{r}
-coeftest(model5.1.3, vcov=vcovHC)
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model5.1.3)
 ```
 
 All the coefficients of the model are highly significant. 
@@ -736,7 +741,7 @@ str(retailSales)
 
 Revenue for 2007 is either declining from previous years or it is not a complete year's worth of data.
 
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
 bc.gross_profit <- barchart(Revenue/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, scales=list(y="free"), layout=c(3,7),
          auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
@@ -744,38 +749,43 @@ update(bc.gross_profit, border="transparent")
 ```
 
 \newpage
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
 bc.gross_profit <- barchart(Planned.revenue/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, scales=list(y="free"), layout=c(3,7),
-         auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
+         auto.key=list(title="Product Lines", columns=1), ylab="Projected Revenue (thousands)")
 update(bc.gross_profit, border="transparent")
 ```
 \newpage
 
-### Gross Profit By Country
+### Gross Profit By Country and Product Line
 
 The following two charts shows gross profit for each year broken into product lines. The first chart shows all countries on the same scale which shows that the United States is the largest retailer. The second chart is the same information presented such that each bar chart has an independent scale for gross profit. It's important to note that Switzerland and Australia have no sales data for 2004.
 
-\newpage
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.25, echo=FALSE}
 bc.gross_profit <- barchart(Gross.profit/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, layout=c(3,7),
-         auto.key=list(title="Product Lines", columns=1), ylab="Gross Profit (thousands)")
+         auto.key=list(title="Product Lines", columns=1),
+         ylab="Gross Profit (thousands)")
 update(bc.gross_profit, border="transparent")
 ```
 \newpage
+
+### Gross Profit by Country and Product Line - Individually Scaled
+
 The Personal Accessory and Golf Equipment categories are responsible for the highest gross profits, with Camping Equipment following closely. The Outdoor Protection and Mountaineering Equipment product lines are not nearly as profitable.
 
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
 bc.gross_profit <- barchart(Gross.profit/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, scales=list(y="free"), layout=c(3,7),
-         auto.key=list(title="Product Lines", columns=1), ylab="Gross Profit (thousands)")
+         auto.key=list(title="Product Lines", columns=1),
+         ylab="Gross Profit (thousands)")
 update(bc.gross_profit, border="transparent")
 ```
 \newpage
+
 ### Gross Profit By Order Method
 
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
 bc.gross_profit <- barchart(Revenue/1000.0 ~ as.factor(Year) | Order.method.type, groups=Product.line,
          data=retailSales, scales=list(y="free"), layout=c(1,7),
          auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
@@ -785,16 +795,17 @@ update(bc.gross_profit, border="transparent")
 
 ### Product Costs
 
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
 bc.gross_profit <- barchart(Product.cost/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, scales=list(y="free"), layout=c(3,7),
          auto.key=list(title="Product Lines", columns=1), ylab="Product Cost (thousands)")
 update(bc.gross_profit, border="transparent")
 ```
 \newpage
+
 ### Ratio of Revenue to Product Costs
 
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
 bc.gross_profit <- barchart(Revenue/Product.cost ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, layout=c(3,7),
          auto.key=list(title="Product Lines", columns=1), ylab="Ratio of Revenue to Product Cost")
@@ -805,7 +816,7 @@ update(bc.gross_profit, border="transparent")
 
 The leading product category by quantity is Personal Accessories, with Mountaineering Equipment and Camping Equipment following closely. 
 
-```{r fig.width=6, fig.height=8.25}
+```{r fig.width=6, fig.height=8.25, echo=FALSE}
 bc.quantity <- barchart(Quantity/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=retailSales, scales=list(y="free"), layout=c(3,7),
          auto.key=list(title="Product Lines", columns=1), ylab="Quantity Sold (thousands)")
@@ -817,11 +828,10 @@ update(bc.quantity, border="transparent")
 
 In this chart is obvious that web sales is the dominant order method, so much so that most other sales have become nearly insignificant in most countries by 2006 and 2007.
 
-```{r fig.width=6, fig.height=8.25}
+```{r fig.width=6, fig.height=8.25, echo=FALSE}
 bc.quantity <- barchart(Quantity/1000.0 ~ as.factor(Year) | Retailer.country, groups=Order.method.type,
          data=retailSales, scales=list(y="free"), layout=c(3,7),
-         auto.key=list(title="Order Methods", columns=1), ylab="Quantity Sold (thousands)",
-         col=c('yellow','red','green','blue','magenta','cyan'))
+         auto.key=list(title="Order Methods", columns=1), ylab="Quantity Sold (thousands)")
 update(bc.quantity, border="transparent")
 ```
 \newpage
@@ -848,7 +858,7 @@ rs.test$Revenue <- ifelse(rs.test$Year==2007, 2*rs.test$Revenue, rs.test$Revenue
 ```
 
 The graph would indicate that we are probably missing the last half of 2007 data. We should keep this in mind when evaulating models.
-```{r fig.width=6, fig.height=8.5}
+```{r fig.width=5.5, fig.height=8.5, echo=FALSE}
 bc.adj_revenue <- barchart(Revenue/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
          data=rs.test, scales=list(y="free"), layout=c(3,7),
          auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
@@ -857,12 +867,12 @@ update(bc.adj_revenue, border="transparent")
 
 Product Costs histogram shows that we should use the log of product costs to deal with the significant skew in the untransformed variable.
 ```{r}
-hist(retailSales$Product.cost, main='Histogram of Product Costs', xlab='Product Costs USD$')
-hist(log(retailSales$Product.cost), main='Histogram of log Product Costs', xlab='log Product Costs USD$')
+hist(retailSales$Product.cost, main='Histogram of Product Costs', 
+     xlab='Product Costs USD$')
+hist(log(retailSales$Product.cost), main='Histogram of log Product Costs', 
+     xlab='log Product Costs USD$')
 
 ```
-
-
 
 ## Model Building
 
@@ -898,7 +908,7 @@ Evaluate against 2006 only:
 model.rev.country.pred <- predict(model.rev.country, subset(revenue.by_country.test,Year==2006))
 # measure against test data
 model.rev.country.lmse <- sqrt(sum((model.rev.country.pred - 
-                                       log1p(subset(revenue.by_country.test,Year==2006)$revenues))^2))
+                              log1p(subset(revenue.by_country.test,Year==2006)$revenues))^2))
 model.rev.country.lmse
 
 ```
@@ -969,21 +979,37 @@ Interestingly, the country significance levels have dropped to the point where w
 
 ```{r}
 # create a simple OLS model for log(revenue) ~ Product.cost
-model.rev.prod <- lm(revenues ~ plannedRev + 
+model.rev.prod.2 <- lm(revenues ~ plannedRev + 
                        prodCosts + Product.line + 
                        Year, 
                         data=revenue.by_prod.train )
-summary(model.rev.prod)
+coeftest(model.rev.prod.2, vcov=vcovHC)
 # predict the outcome of the test data set
-model.rev.prod.pred <- 
-  predict(model.rev.prod, 
+model.rev.prod.2.pred <- 
+  predict(model.rev.prod.2, 
           subset(revenue.by_prod.test, Year==2006))
 # measure against test data
-model.rev.prod.lmse <- 
-  sqrt(sum((model.rev.prod.pred - 
+model.rev.prod.2.lmse <- 
+  sqrt(sum((model.rev.prod.2.pred - 
             subset(revenue.by_prod.test, Year==2006)$revenues))^2)
-model.rev.prod.lmse
+model.rev.prod.2.lmse
 ```
 
 This model removes the country variable but adds in the Planned.revenue variable. The model is improved with a LMSE of 0.445751 and highly significant F-statistic. The model is simplified by the removal of the country variable as well, helping to reduce variance while keeping bias as low as possible.
 
+## Model Summary
+
+```{r results='asis', echo=FALSE}
+specify_decimal <- function(x, k) format(round(x, k), nsmall=k)
+stargazer(model.rev.country, model.rev.country_year, model.rev.prod, model.rev.prod.2,
+          df=F, title='Results',
+          dep.var.caption = 'Log Revenue',
+          dep.var.labels.include = FALSE,
+          intercept.bottom = FALSE,
+          omit='Retailer',
+          omit.labels= 'Retailer Countries?',
+          add.lines=list(c('LMSE', specify_decimal(model.rev.country.lmse,4),
+                           specify_decimal(model.rev.country_year.lmse,4),
+                           specify_decimal(model.rev.prod.lmse,4),
+                           specify_decimal(model.rev.prod.2.lmse,4))))
+```
