@@ -528,11 +528,46 @@ Second, management is equally interested in understanding variables that might a
 
 &nbsp;&nbsp;&nbsp;&nbsp;Your analysis should address the following:
 
-*) Exploratory Data Analysis: focus on bivariate and multivariate relationships
-*) Be sure to assess conditions and identify unusual observations
-*) Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
-*) Explain what interaction terms in your model mean in context sup- ported by data visualizations
-*) Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
-*) Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
+1) Exploratory Data Analysis: focus on bivariate and multivariate relationships
+
+There are 84672 records in total, among which 76 of them has zero revenue, and 59929 records with NA in revenue, and other ratio variables. We are not going to include records with zero revenue in the analysis, as they only account for $0.3\%$ of the tatal non-NA data. Upon further investigation, it appears that those 59929 observations have NA's in all the ratio variables. Thus we will exclude those ones too for our analysis.
+
+```{r}
+load('retailSales.Rdata')
+# a quick glance at the summary shows the majority of data has NA
+summary(retailSales)
+# upon further check for incomplete records, they have NA in all ratio variables
+sum(!complete.cases(retailSales))
+# hence we exclude those from our analysis
+data6 <- retailSales[complete.cases(retailSales),]
+# another look reveals there are 76 observations with zero revenue, which is only a small percentage 0.3%
+sum(data6$Revenue==0, na.rm=T)
+# thus we get rid of records with revenue zero as well
+data6.2 <- data6[data6$Revenue!=0,]
+# now, check univariate and bivariate relations with our beloved matrix plot
+pairs(Revenue ~ Product.cost + Quantity + Unit.cost + Unit.price, data=data6.2, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='revenue, cost, quantity, age')
+# it appears the distribution of the ratio varialbes is heavily skewed
+# thus we check relations with log value, which has better normality in distribution
+pairs(log(Revenue)~ log(Product.cost) + log(Quantity) + log(Unit.cost) + log(Unit.price), data=data6.2, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='revenue, cost, quantity, age')
+
+```
+
+2) Be sure to assess conditions and identify unusual observations
+ 
+
+3) Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+
+```{r}
+m6.3 <- lm(Revenue ~ Planned.revenue, data=data6.2)
+confint(m6.3)
+```
+
+The confidence interval of planned revenue coefficient is $(0.969, 0.970)$, thus we can reject the null hypothesis that the average revenue is not different from 95 cents when the planned revenue increases by $1.
+
+4) Explain what interaction terms in your model mean in context sup- ported by data visualizations
+
+5) Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
+
+6) Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
 
 
