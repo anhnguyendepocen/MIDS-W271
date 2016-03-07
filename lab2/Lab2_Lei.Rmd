@@ -567,8 +567,6 @@ m6.3 <- lm(Revenue ~ Planned.revenue, data=data.train)
 confint(m6.3)
 # predict to validate
 pred <- predict.lm(m6.3, data.test)
-# check the scatter plot between prediction and true value
-plot(pred, data.test$Revenue)
 ```
 
 Using training data, the confidence interval of planned revenue coefficient is $(0.969, 0.970)$, thus we can reject the null hypothesis that the average revenue is not different from 95 cents when the planned revenue increases by $1. 
