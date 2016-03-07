@@ -143,6 +143,9 @@ library(lattice)
 library(car)
 library(lmtest)
 library(sandwich)
+library(AER)
+library(ivpack)
+library(stargazer)
 # load data
 setwd('~/GitHub/MIDS/MIDS-W271/lab2')
 data <- read.csv("WageData2.csv", header = TRUE)
@@ -213,22 +216,28 @@ The degrees of freedom is 996, which is the number of observations minus number 
 
 3). Describe any unexpected results from your regression and how you would resolve them (if the intent is to estimate return to education, condition on race and experience).
 
-Regression coefficient of $age$ becomes $NA$ --> collinearity?
+Regression coefficient of $age$ becomes _NA_ --> collinearity?
+
+To estimate return to education, condition on race and experience, we can add interaction terms between education, and experience and raceColor, to the model:
+
 
 ```{r}
 m2 <- lm(logWage~education+education:experience+education:raceColor, data=data)
 summary(m2)
 ```
 
-Take derivative of $wage$ with respect to $education$, we obtain return to education, condition on race and experience
+take derivative of $wage$ with respect to $education$, we obtain the conditional return to education on race and experience:
 
 $$\frac{d(wage)}{d(education)}=0.0597973+0.0030623\times experience-0.0185244\times raceColor$$
 
 4). Interpret the coefficient estimate associated with education
 
-hold all other factors constant, 1 more year of education will increase wage by 6%
+Hold all other factors constant, 1 more year of eduction will increase the wage by $8\%$.
 
 5). Interpret the coefficient estimate associated with experience
+
+Hold all other factors constant, 1 more year of experience will increase the wage by $3.5\%$.
+
 
 
 ## Question 4.4
@@ -257,44 +266,158 @@ plot(data$experience, data$effect, main = 'Estimated effect of experience on wag
 
 when experience is 10 years, plug in equation $4.4$, we have the effect of 0.034933.
 
-the more experience one has, the smaller effect on the wage increase
+the more experience one has, the smaller effect on the wage increase.
 
 
 ## Question 4.5
 
-Regress $logWage$ on education, experience, experienceSquare, raceColor, dad_education, mom_edu rural, city.
+Regress $logWage$ on education, experience, experienceSquare, raceColor, dad_education, mom_education, rural, city.
+
+```{r}
+m4.5 <- lm(logWage ~ education+experience+experienceSquare+raceColor
+           +dad_education+mom_education+rural+city, data=data)
+summary(m4.5)
+```
+
 
 1). What are the number of observations used in this regression? Are missing values a problem? Analyze the missing values, if any, and see if there is any discernible pattern with wage, education, experience, and raceColor.
 
+The number of observation used in this regress is **``r sprintf("%s", length(m4.5$fitted.values))``**. 
 
+```{r}
+na.index=is.na(data[,c('mom_education','dad_education','wage','education',
+                       'experience','raceColor')])
+na.index[na.index]=1
+heatmap(1-t(na.index))
+```
+
+There are **``r sprintf("%s", sum(is.na(data$mom_education)))``** missing value in mom_education and **``r sprintf("%s", sum(is.na(data$dad_education)))``** in dad_education. All other variables have complete records. The distribution of the missing values, with respect to the rows and variables, can be seen in the heatmap as red and orange blocks.
 
 2). Do you just want to "throw away" these observations?
 
+It is not a good strategy to "throw away" observations with missing education of mom and/or dad education, doing so we lose a lot useful infomration in other variables. In addition, from the boxplot below we can see the variation of these two variables is not quite large, we would apply some rule to interpolate the missing values.
+
+
+```{r}
+boxplot(data[,c('mom_education','dad_education')])
+```
 
 
 3). How about blindly replace all of the missing values with the average of the observed values of the corresponding variable? Rerun the original regression using all of the observations?
 
+```{r}
+# replace mom/dad education with their means respectively
+mom_educ_mean <- mean(data$mom_education, na.rm=T)
+dad_educ_mean <- mean(data$dad_education, na.rm=T)
+m_miss = is.na(data$mom_education)
+d_miss = is.na(data$dad_education)
+data$dad_education_fill = data$dad_education
+data$mom_education_fill = data$mom_education
+data$mom_education_fill[m_miss] = mom_educ_mean
+data$dad_education_fill[d_miss] = dad_educ_mean
+# rerun the regression
+m4.5.3 <- lm(logWage ~ education+experience+experienceSquare+raceColor
+             +dad_education_fill+mom_education_fill+rural+city, data=data)
+summary(m4.5.3)
+```
 
+The new model is similar with previous one built with limited observations, in terms of the effect of mom/dad education on one's wage. However, the effect of education and experience both have changed.
 
 4). How about regress the variable(s) with missing values on education, experience, and raceColor, and use this regression(s) to predict (i.e. "impute") the missing values and then rerun the original regression using all of the observations?
 
+```{r}
+# regression for parent education
+m4.5.4.mom <- lm(mom_education~education+experience+raceColor, data=data)
+m4.5.4.dad <- lm(dad_education~education+experience+raceColor, data=data)
+# predict for missing records
+m_miss = is.na(data$mom_education)
+d_miss = is.na(data$dad_education)
+fill_mom <- predict.lm(m4.5.4.mom, data[m_miss,])
+fill_dad <- predict.lm(m4.5.4.dad, data[d_miss,])
+# fill back in
+data$dad_education_fill = data$dad_education
+data$mom_education_fill = data$mom_education
+data$mom_education_fill[m_miss] = fill_mom
+data$dad_education_fill[d_miss] = fill_dad
+# rerun the regression
+m4.5.4 <- lm(logWage ~ education+experience+experienceSquare+raceColor
+             +dad_education_fill+mom_education_fill+rural+city, data=data)
+summary(m4.5.4)
 
+```
+
+with the imputed values for mom/dad education, the effect of education and experience remain largely the same with previous one with data filled by mean value.
 
 5). Compare the results of all of these regressions. Which one, if at all, would you prefer?
 
+```{r}
+summary(m4.5.4.mom)
+summary(m4.5.4.dad)
+```
+
+from the regression model of parents education we can see the $R^2$ is modest, although all predictors are significant. Given that parent education variables are insignificant in either of the 3 models for one's wage, the imputed values may just bring more noise than useful information to the model. Thus I would prefer to omit these two variables and build a model with all 1000 observations on the rest of the variables.
 
 ## Question 4.6
 
 1). Consider using $z_{1}$ as the instrumental variable (IV) for education. What assumptions are needed on $z_{1}$ and the error term (call it, $u$)?
 
+In order for $z_1$ to be an instrument variable, it should be highly correlated with our predictor(s) of interests (education, experience), while uncorrelated with the error term, namely $cov(z_1,u)=0$
 
 
 2). Suppose $z_{1}$ is an indicator representing whether or not an individual lives in an area in which there was a recent policy change to promote the importance of education. Could $z_{1}$ be correlated with other unobservables captured in the error term?
 
-
+Although $z_1$ here presumably will be correlated with one's education, tt is possible that $z_1$ becomes correlated with other unobservables in the error term. For example, with the policy change to promote the importance of education in an areea, more high income families are intended to move to the area, and family income/wealthness could be a factor that correlated with one's own wage. Thus with $z_1$ as instrument variable, the measured effect of education on wage could be a hetergenerous effect for certain groups of people.
 
 3). Using the same specification as that in question 4.5, estimate the equation by 2SLS, using both $z_{1}$ and $z_{2}$ as instrument variables. Interpret the results. How does the coefficient estimate on education change?
 
+```{r}
+
+ols1 <- lm(logWage ~ education + experience, data=data)
+se_ols1 <- robust.se(ols1)[,2]
+
+ols2 <- lm(logWage ~ education + experience + experienceSquare + raceColor, data=data)
+se_ols2 <- robust.se(ols2)[,2]
+
+ols3 <- lm(logWage ~ education + experience + experienceSquare + raceColor
+           + dad_education + mom_education, data=data)
+se_ols3 <- robust.se(ols3)[,2]
+
+ols4 <- lm(logWage ~ education + experience + experienceSquare + raceColor
+           + dad_education + mom_education + rural + city, data=data)
+se_ols4 <- robust.se(ols4)[,2]
+
+tsls1 <- ivreg(logWage ~ education + experience | factor(z1)*factor(z2) + experience, 
+               data = data)
+se_tsls1 <- robust.se(tsls1)[,2]
+
+tsls2 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor |
+                 factor(z1)*factor(z2) + experience + experienceSquare, data=data)
+se_tsls2 <- robust.se(tsls2)[,2]
+
+tsls3 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+               + dad_education + mom_education | factor(z1)*factor(z2) + experience 
+               + experienceSquare + dad_education + mom_education, data=data)
+se_tsls3 <- robust.se(tsls3)[,2]
+
+tsls4 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+               + dad_education + mom_education + rural + city | factor(z1)*factor(z2) 
+               + experience + experienceSquare + dad_education + mom_education
+               + rural + city, data=data)
+se_tsls4 <- robust.se(tsls4)[,2]
+
+# generate regression table
+#stargazer(ols1, tsls1, ols2, tsls2, ols3, tsls3, ols4, tsls4,
+#          se = list(se_ols1, se_tsls1, se_ols2, se_tsls2, 
+#                    se_ols3, se_tsls3, se_ols4, se_tsls4),
+#          covariate.labels=c("education", "experience", "experience squared", 
+#                             "race (1 = black)", "dad Education", "mom education"),
+#          dep.var.labels = "Log Weekly Wage",
+#          omit = c("city*","rural"), 
+#          out = "Q4_table.html", df= F,
+#          omit.labels = c("rural", "city")
+#          )
+
+```
 
 
 \newpage
@@ -304,20 +427,87 @@ Regress $logWage$ on education, experience, experienceSquare, raceColor, dad_edu
 
 The dataset, ”wealthy candidates.csv”, contains candidate level electoral data from a developing country. Politically, each region (which is a subset of the country) is divided in to smaller electoral districts where the candidate with the most votes wins the seat. This dataset has data on the financial wealth and electoral performance (voteshare) of electoral candidates. We are interested in understanding whether or not wealth is an electoral advantage. In other words, do wealthy candidates fare better in elections than their less wealthy peers?
 
+```{r echo=FALSE}
+setwd('~/GitHub/MIDS/MIDS-W271/lab2')
+data5 <- read.csv("wealthy_candidates.csv", header = TRUE)
+str(data5)
+
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "green", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, use='complete.obs'))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+pairs(voteshare~absolute_wealth + urb + lit, data=data5, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='shared vote, wealth, urban, literate')
+```
+
+Upon further investigation we find the distribution of wealth is highly skewed. To mitigate the nonnormality here, we take the log of absolute_wealth. In addition there are 435 candidates who has an absolute wealth of $2, these may be due to some cutoff line in data collection, where anything below would be $2. It's probably a good idea to set it to $1, so that after taking log it becomes zero, and this group becomes baseline.
+
+```{r echo=FALSE}
+data5$logWealth = log(data5$absolute_wealth)
+hist(data5$logWealth, breaks=50)
+```
+
+We can see after taking log the distribution of wealth variable is not as heavily skewed as previously, except a outlier cluster with value $log2.
+
+
 1). Begin with a parsimonious, yet appropriate, specification. Why did you choose this model? Are your results statistically significant? Based on these results, how would you answer the research question? Is there a linear relationship between wealth and electoral performance?
 
+Let's simply assume there is a positive correlation between log candidate wealth and electoral performance, and build a linear model:
 
+```{r}
+m5 <- lm(voteshare ~ logWealth, data = data5)
+summary(m5)
+```
+
+and the model indicates financial wealth has statistical significant effect on electoral performance, but the practical effect size is quite small.
 
 2). A team-member suggests adding a quadratic term to your regression. Based on your prior model, is such an addition warranted? Add this term and interpret the results. Do wealthier candidates fare better in elections?
 
+A quadratic term is added when the treatment effect is not constant as the predictor value changes. Here by taking derivative with respect to the predictor, we obtain the effect on the change rate shared vote attributable to wealth.
 
+```{r}
+m5 <- lm(voteshare ~ logWealth + I(logWealth**2), data = data5)
+summary(m5)
+```
+
+here the effect is not significant.
 
 3). Another team member suggests that it is important to take into account the fact that different regions have different electoral contexts. In particular, the relationship between candidate wealth and electoral performance might be different across states. Modify your model and report your results. Test the hypothesis that this addition is not needed.
 
+We evaluate the interaction terms between logWage and region:
+
+```{r}
+m5 <- lm(voteshare ~ logWealth*factor(region), data = data5)
+summary(m5)
+coeftest(m5, vcov = vcovHC)
+```
+
+the model indicates that being in region 2 and 3 the effect of wealth on electoral performance is significant. And with heteroschedasticy considered, the test shows being in region 2 the wealth effect is significant.
 
 
 4). Return to your parsimonious model. Do you think you have found a causal and unbiased estimate? Please state the conditions under which you would have an unbiased and causal estimates. Do these conditions hold?
 
+We evaluate the diagnostic plot of the parsimonious model.
+
+```{r echo=FALSE}
+m5 <- lm(voteshare ~ logWealth, data = data5)
+plot(m5)
+```
 
 
 5). Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
