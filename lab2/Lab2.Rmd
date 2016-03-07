@@ -177,6 +177,7 @@ library(psych)
 library(ivpack)
 library(lattice)
 library(dplyr)
+library(stargazer)
 ```
 
 ```{r}
@@ -331,6 +332,8 @@ model4.3 <- lm(logWage ~ education + experience + age + raceColor, data=df1)
 
 ```{r}
 summary(model4.3)
+model4.3.se <- coeftest(model4.3, vcov=vcovHC)
+model4.3.se
 ```
 ```{r fig.width=6.5, fig.height=8}
 par(mfrow = c(2,2))
@@ -363,6 +366,8 @@ Regress $log(wage)$ on education, experience, experienceSquare, and raceColor.
 ```{r}
 model4.4 <- lm(log(wage) ~ education + experience + experienceSquare + raceColor, data=df1)
 summary(model4.4)
+model4.4.se <- coeftest(model4.4, vcov=vcovHC)
+model4.4.se
 ```
 
 ```{r fig.width=6.5, fig.height=8}
@@ -400,7 +405,8 @@ Regress $logWage$ on _education_, _experience_, _experienceSquare_, _raceColor_,
 model4.5 <- lm(logWage ~ education + experience + experienceSquare + raceColor +
                  dad_education + mom_education + rural + city, data=df1)
 summary(model4.5)
-coeftest(model4.5, vcov=vcovHC)
+model4.5.se <- coeftest(model4.5, vcov=vcovHC)
+model4.5.se
 ```
 ```{r fig.width=6.5, fig.height=8}
 par(mfrow = c(2,2))
@@ -472,7 +478,8 @@ summary(df1.na$mom_education)
 model4.5.na <- lm(logWage ~ education + experience + experienceSquare + raceColor +
                  dad_education + mom_education + rural + city, data=df1.na)
 summary(model4.5.na)
-coeftest(model4.5.na, vcov=vcovHC)
+model4.5.na.se <- coeftest(model4.5.na, vcov=vcovHC)
+model4.5.na.se
 ```
 ```{r fig.width=6.5, fig.height=8}
 par(mfrow = c(2,2))
@@ -503,10 +510,11 @@ densityplot(df1.imputed)
 ```
 ```{r}
 
-model4.5.na <- lm(logWage ~ education + experience + experienceSquare + raceColor +
+model4.5.nai <- lm(logWage ~ education + experience + experienceSquare + raceColor +
                  dad_education + mom_education + rural + city, data=df1.na)
-summary(model4.5.na)
-coeftest(model4.5.na, vcov=vcovHC)
+summary(model4.5.nai)
+model4.5.nai.se <- coeftest(model4.5.nai, vcov=vcovHC)
+model4.5.nai.se
 ```
 
 Again the estimated coefficients remain statistically insignificant.
@@ -514,10 +522,14 @@ Again the estimated coefficients remain statistically insignificant.
 
 5. Compare the results of all of these regressions. Which one, if at all, would you prefer?
 
-```{r}
-summary(model4.3)
-summary(model4.4)
-summary(model4.5)
+```{r results='asis', echo=FALSE}
+stargazer(model4.3, model4.4, model4.5, model4.5.na, model4.5.nai,
+          df=F, title='Results',
+          dep.var.labels.include = FALSE,
+          column.labels = c('with NA','mean','imputed'),
+          column.separate = c(3,1,1),
+          intercept.bottom = FALSE)
+
 ```
 
 I prefer the first model, from Question 4.3 because it has the highest F-statistic even though it doesn't have the highest Adjusted $R^2$. It is also the simpler model with the fewest parameters (most parsimonious).
