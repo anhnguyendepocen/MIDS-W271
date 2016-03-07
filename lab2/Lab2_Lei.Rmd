@@ -512,7 +512,9 @@ plot(m5)
 
 5). Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
 
+$$cvoteshare=\beta_0+\beta_1cwealth+cu_i$$
 
+given $cov(\Delta u_i, \Delta wealth)=0$
 
 \newpage
 
