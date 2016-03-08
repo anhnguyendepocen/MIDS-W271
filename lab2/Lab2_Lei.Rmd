@@ -528,7 +528,7 @@ Second, management is equally interested in understanding variables that might a
 
 &nbsp;&nbsp;&nbsp;&nbsp;Your analysis should address the following:
 
-1) Exploratory Data Analysis: focus on bivariate and multivariate relationships
+1). Exploratory Data Analysis: focus on bivariate and multivariate relationships
 
 There are 84672 records in total, among which 76 of them has zero revenue, and 59929 records with NA in revenue, and other ratio variables. We are not going to include records with zero revenue in the analysis, as they only account for $0.3\%$ of the tatal non-NA data. Upon further investigation, it appears that those 59929 observations have NA's in all the ratio variables. Thus we will exclude those ones too for our analysis.
 
@@ -556,10 +556,10 @@ data.train <- data6.2[data6.2$Year==2004 | data6.2$Year==2005, ]
 data.test <- data6.2[data6.2$Year==2006 | data6.2$Year==2007, ]
 ```
 
-2) Be sure to assess conditions and identify unusual observations
+2). Be sure to assess conditions and identify unusual observations
  
 
-3) Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+3). Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
 
 ```{r}
 # fit model
@@ -574,7 +574,7 @@ To evaluate the quality of the model, let predict revenue for test dataset, and 
 
 ```{r echo=F}
 # check the scatter plot between prediction and true value
-plot(pred, data.test$Revenue)
+scatterplot(pred, data.test$Revenue)
 ```
 
 Alternatively, one can perform a t-test between prediction and true, to see if the difference between the prediction and real value is significant or not.
@@ -586,59 +586,60 @@ t.test(pred, data.test$Revenue)
 
 obviously we can't reject the null that prediction and real value have no significant difference.
 
-4) Explain what interaction terms in your model mean in context sup- ported by data visualizations
+4). Explain what interaction terms in your model mean in context sup- ported by data visualizations
 
 Let's focus on the effect from the 4 factors (product line, product type, order type, retailer country) on revenue, the rest of the ratio variables are something that's not so easy to control, therefore we comit them in the study.
 Start with parsimonious principle, let's build regression model for each factor separately. Essentially, by fitting building regression model on factor variables, we are comparing the difference between groups.
 Here we can't compare the prediction and true value of revenue because our predictor is not continuous. 
 To evaluate the model, we compare the OLS coefficients between models built on test and training data respectively.
-If the confidence intervals between corresponding coefficient are overlapping with each other, we consdier there is no significant difference between the model. And thus the indication of the coefficient is statistically appealing (not crap).
+If the significance level of each coefficient from two models are consistent, we consdier there is no significant difference between the model. And thus the indication of the coefficient is statistically appealing.
 
 ```{r}
 # Camping Equipment is the baseline for product line
 ols1 <- lm(logRevenue ~ Product.line, data=data.train)
 ols1t <- lm(logRevenue ~ Product.line, data=data.test)
-ci1 <- confint(ols1)
-ci1t <- confint(ols1t)
 # Binoculars is the baseline for product type
 ols2 <- lm(logRevenue ~ Product.type, data=data.train)
 ols2t <- lm(logRevenue ~ Product.type, data=data.test)
-ci2 <- confint(ols2)
-ci2t <- confint(ols2t)
 # E-mail is the baseline for order type
 ols3 <- lm(logRevenue ~ Order.method.type, data=data.train)
 ols3t <- lm(logRevenue ~ Order.method.type, data=data.test)
-ci3 <- confint(ols3)
-ci3t <- confint(ols3t)
 # Australia is the baseline for country
 ols4 <- lm(logRevenue ~ Retailer.country, data=data.train)
 ols4t <- lm(logRevenue ~ Retailer.country, data=data.test)
-ci4 <- confint(ols4)
-ci4t <- confint(ols4t)
 
 # generate model table
-stargazer(ols1, ols1t, ols2, ols2t, ols3, ols3t, ols4, ols4t,
-#          se = list(se_ols1, se_tsls1, se_ols2, se_tsls2, se_ols3, se_tsls3, se_ols4, se_tsls4),
-          covariate.labels=c("product line", "product type", "order type", "retail country"), 
-          dep.var.labels = "Log Revenue",
-#          omit = c("retail","rural"), 
-          out = "Q6_table.html", df= F, ci=T,
-#          omit.labels = c("rural", "city")
-          )
+#stargazer(ols1, ols1t, ols2, ols2t, ols3, ols3t, ols4, ols4t,          
+#          dep.var.labels = "Log Revenue",
+#          omit = NULL, 
+#          out = "Q6_table.html", df= F, ci=T,
+#          omit.labels = NULL
+#          )
 ```
+
+For product line category: outdoor protection class has the lowest impact on revenue, while golf equipment has the biggest impact. And from the order placement perspective: web ordering has the biggest impact, while mail and fax order has the least impact. For coutries: China has the largest market, and selling in northern European countries is slow. Finally for product type: first aid product sell worst while woods sell the best. See detailed comparison in table below:
+
+
+\newpage
 
 It is worth checking the interaction between product line and country, since some particular stuff may sell particularly well in some particular country.
 
 ```{r}
 # baseline is Personal Accessories:United States
 ols_interact <- lm(logRevenue ~ Product.line:Retailer.country, data=data.train)
-top10 <- tail(sort(ols_interact$coefficients),11)
+```
+
+and the top 10 product-country combinations are:
+
+```{r}
+# top 10 hot selling product:country
+tail(sort(ols_interact$coefficients),11)
 ```
 
 
-5) Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
+5). Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
 
-6) Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
+6). Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
 
 number of golf course (n) in countries where golf equipment is selling well
 
