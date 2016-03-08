@@ -1,6 +1,6 @@
 ---
 title: "W271 Lab2"
-author: "Dr. Who"
+author: "Lei Yang, Subhashini Raghunathan, Ron Cordell"
 date: "February 27, 2016"
 output: pdf_document
 
@@ -186,6 +186,9 @@ df1 <- read.csv('WageData2.csv')
 
 ```{r}
 str(df1)
+```
+\newpage
+```{r}
 summary(df1)
 ```
 
@@ -311,6 +314,34 @@ scatterplotMatrix(~ logWage + age + dad_education + mom_education, data=df1)
 ```
 \newpage
 
+```{r echo=FALSE}
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "green", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, use='complete.obs'))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+pairs(wage~education+experience+age, data=df1, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='wage, education, experience, age')
+```
+
+```{r echo=FALSE}
+pairs(logWage~experienceSquare+IQscore+dad_education+mom_education, data=df1, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='logWage, experience2, IQ, parent education')
+```
+
 Exploring race effects on _eduction_ and _wage_
 ```{r fig.width=6.5, fig.height=8}
 plot(df1$education, df1$logWage, col=ifelse(df1$raceColor==0,'red','green'), 
@@ -418,23 +449,6 @@ plot(model4.5, sub.caption="Model Diagnostic Plots")
 
 There are 1000 - 277 = 723 observations.
 
-```{r fig.width=6.5, fig.height=6}
-scatterplot(df1$education, df1$wage, groups=df1$raceColor, by.groups=TRUE, 
-            xlab='Years', ylab='$', 
-            main='Scatterplot of Wage and Education',
-            legend.title='race', col=c('red','green'))
-```
-```{r fig.width=6.5, fig.height=6}
-scatterplot(df1$education, df1$experience, groups=df1$raceColor, by.groups=TRUE, 
-            xlab='Education Years', ylab='Experience Years',
-            main='Scatterplot Education and Experience',
-            legend.title='race', col=c('red','green'))
-```
-```{r fig.width=6.5, fig.height=6}
-scatterplot(df1$wage, df1$raceColor, xlab='Years', ylab='$', 
-            main='Scatterplot Education and Experience')
-```
-
 There is a fixed linear relationship between education and experience.
 
 ```{r message=FALSE, echo=FALSE}
@@ -454,7 +468,13 @@ Over 25% of the dad_education data is missing, and about 12% of the mom_educatio
 
 2. Do you just want to "throw away" these observations?
 
-The NA observations force the throwing out of the corresponding rows of the data frame, significantly reducing the power of the model.
+The NA observations force the throwing out of the corresponding rows of the data frame, significantly reducing the power of the model. In addition, from the boxplot below we can see the variation of these two variables is not quite large, we would apply some rule to interpolate the missing values.
+
+
+```{r}
+boxplot(df1[,c('mom_education','dad_education')])
+```
+
 
 3. How about blindly replace all of the missing values with the average of the observed values of the corresponding variable? Rerun the original regression using all of the observations?
 
@@ -490,40 +510,35 @@ Regressing against a modified _dad_education_ and _mom_education_ that has the m
 
 4. How about regress the variable(s) with missing values on education, experience, and raceColor, and use this regression(s) to predict (i.e. "impute") the missing values and then rerun the original regression using all of the observations?
 
-```{r message=FALSE, echo=FALSE}
-library(mice)
-```
-
-```{r message=FALSE}
-# make a temporary datafrome that doesn't have IQscore
-df1.na <- df1[, !(names(df1.na) %in% c('IQscore'))]
-# use the mice package to impute the missing data
-df1.imputed <- mice(df1.na,m=5, method='pmm',
-                    maxit=50, seed=500, printFlag = FALSE)
-# check the results
-summary(df1.imputed)
-summary(df1.imputed)
-```
-```{r fig.width=6.5, fig.height=6}
-# density plot should show the imputed distribution to be similar to the observed
-densityplot(df1.imputed)
-```
 ```{r}
-
-model4.5.nai <- lm(logWage ~ education + experience + experienceSquare + raceColor +
-                 dad_education + mom_education + rural + city, data=df1.na)
-summary(model4.5.nai)
-model4.5.nai.se <- coeftest(model4.5.nai, vcov=vcovHC)
-model4.5.nai.se
+# regression for parent education
+data <- df1
+m4.5.4.mom <- lm(mom_education~education+experience+raceColor, data=data)
+m4.5.4.dad <- lm(dad_education~education+experience+raceColor, data=data)
+# predict for missing records
+m_miss = is.na(data$mom_education)
+d_miss = is.na(data$dad_education)
+fill_mom <- predict.lm(m4.5.4.mom, data[m_miss,])
+fill_dad <- predict.lm(m4.5.4.dad, data[d_miss,])
+# fill back in
+data$dad_education_fill = data$dad_education
+data$mom_education_fill = data$mom_education
+data$mom_education_fill[m_miss] = fill_mom
+data$dad_education_fill[d_miss] = fill_dad
+# rerun the regression
+m4.5.4 <- lm(logWage ~ education+experience+experienceSquare+raceColor
+             +dad_education_fill+mom_education_fill+rural+city, data=data)
+summary(m4.5.4)
+coeftest(m4.5.4, vcov=vcovHC)
 ```
+
 
 Again the estimated coefficients remain statistically insignificant.
-\newpage
 
 5. Compare the results of all of these regressions. Which one, if at all, would you prefer?
 
 ```{r results='asis', echo=FALSE}
-stargazer(model4.3, model4.4, model4.5, model4.5.na, model4.5.nai,
+stargazer(model4.3, model4.4, model4.5, model4.5.na, m4.5.4,
           df=F, title='Results',
           dep.var.labels.include = FALSE,
           column.labels = c('with NA','mean','imputed'),
@@ -568,11 +583,56 @@ There is a highly statistically significant relationship between $z_{2}$ and _ed
 Performing a 2SLS regression using both $z_{1}$ and $z_{2}$
 
 ```{r}
-model4.6_iv <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
-                     + dad_education + mom_education + rural + city | z1 + z2, data=df1)
-robust.se(model4.6_iv)
-```
 
+ols1 <- lm(logWage ~ education + experience, data=data)
+se_ols1 <- robust.se(ols1)[,2]
+
+ols2 <- lm(logWage ~ education + experience + experienceSquare + raceColor, data=data)
+se_ols2 <- robust.se(ols2)[,2]
+
+ols3 <- lm(logWage ~ education + experience + experienceSquare + raceColor
+           + dad_education + mom_education, data=data)
+se_ols3 <- robust.se(ols3)[,2]
+
+ols4 <- lm(logWage ~ education + experience + experienceSquare + raceColor
+           + dad_education + mom_education + rural + city, data=data)
+se_ols4 <- robust.se(ols4)[,2]
+
+tsls1 <- ivreg(logWage ~ education + experience | factor(z1)*factor(z2) + experience, 
+               data = data)
+se_tsls1 <- robust.se(tsls1)[,2]
+
+tsls2 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor |
+                 factor(z1)*factor(z2) + experience + experienceSquare, data=data)
+se_tsls2 <- robust.se(tsls2)[,2]
+
+tsls3 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+               + dad_education + mom_education | factor(z1)*factor(z2) + experience 
+               + experienceSquare + dad_education + mom_education, data=data)
+se_tsls3 <- robust.se(tsls3)[,2]
+
+tsls4 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+               + dad_education + mom_education + rural + city | factor(z1)*factor(z2) 
+               + experience + experienceSquare + dad_education + mom_education
+               + rural + city, data=data)
+se_tsls4 <- robust.se(tsls4)[,2]
+```
+\newpage
+
+```{r echo=FALSE, results='asis'}
+# generate regression table
+stargazer(ols1, tsls1, ols2, tsls2, ols3, tsls3, ols4, tsls4,
+          se = list(se_ols1, se_tsls1, se_ols2, se_tsls2, 
+                    se_ols3, se_tsls3, se_ols4, se_tsls4),
+          covariate.labels=c("education", "experience", "experience squared", 
+                             "race (1 = black)", "dad Education", "mom education"),
+          dep.var.labels = "Log Weekly Wage",
+          omit = c("city*","rural"), 
+          out = "Q4_table.html", df= F,
+          omit.labels = c("rural", "city")
+          )
+
+```
 \newpage
 
 # Question 5. Classical Linear Model 2
@@ -598,20 +658,34 @@ str(df2)
 summary(df2)
 ```
 
+```{r echo=FALSE}
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "green", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, use='complete.obs'))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
 
-```{r}
-df2$logWealth <- log(df2$absolute_wealth)
-df2$logUrb<- log(df2$urb)
-par(mar=c(3,3,3,3))
-mhist <- df2[,c('urb','logUrb','lit','voteshare','absolute_wealth', 'logWealth')]
-mhist$region <- as.numeric(df2$region)
-multi.hist(mhist)
-
+pairs(voteshare~absolute_wealth + urb + lit, data=df2, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='shared vote, wealth, urban, literate')
 ```
 
-We can see that _urb_ and _absolute_wealth_ have issues with distribution. Creating a new variable, _logUrb_, as the log(urb) does help with the distribution. However, _absolute_wealth_ doesn't get as much help from this treatment.
 
-If we examing the _absolute_wealth_ variable we can see there are a large number of 2.0e+00 values, which is also shown as the minimum value in the summary.
+We can see that _urb_ and _absolute_wealth_ have issues with distribution and are highly skewed. Creating a new variable, _logUrb_, as the log(urb) does help with the distribution. However, _absolute_wealth_ doesn't get as much help from this treatment.
+
+Examining the _absolute_wealth_ variable we can see there are a large number of 2.0e+00 values, which is also shown as the minimum value in the summary.
 
 ```{r}
 sum(na.omit(df2$absolute_wealth==2.0))
@@ -627,12 +701,8 @@ After a bit of research we found that the 2.0 value is not a mistake but the act
 # rename the absolute_wealth variable for convenience
 df2$wealth<-df2$absolute_wealth
 df2$logWealth <- log(df2$wealth)
+df2$logUrb<- log(df2$urb)
 summary(df2)
-```
-```{r fig.width=6.5, fig.height=8}
-par(mar=c(3,3,3,3))
-mhist <- df2[,c('logUrb','lit','voteshare', 'logWealth')]
-multi.hist(mhist)
 ```
 
 ```{r fig.width=6.5, fig.height=8}
@@ -647,7 +717,7 @@ model5.1 <- lm(voteshare ~ logWealth, data=df2)
 coeftest(model5.1, vcov=vcovHC)
 ```
 
-There is a linear relationship between _logWealth_ and _voteshare_, statistically significant at the .002 level.
+There is a linear relationship between _logWealth_ and _voteshare_, statistically significant at the .002 level but the practical significance is small.
 
 The most parsimonious and direct model is the simple OLS model that expresses the relationship between vote share and wealth.
 
@@ -680,32 +750,24 @@ The null hypothesis that the $logWealth^2$ parameter is not statistically differ
 
 3. Another team member suggests that it is important to take into account the fact that different regions have different electoral contexts. In particular, the relationship between candidate wealth and electoral performance might be different across states. Modify your model and report your results. Test the hypothesis that this addition is not needed.
 
-The _region_ variable is already factored so we can use it in the model as is, with the base level as Region 1
+We evaluate the interaction terms between logWage and region:
 
 ```{r}
-model5.1.3 <- lm(voteshare ~ logWealth + region, data=df2)
-coeftest(model5.1.3, vcov=vcovHC)
+model5.1.3 <- lm(voteshare ~ logWealth*factor(region), data = df2)
+summary(model5.1.3)
+coeftest(model5.1.3, vcov = vcovHC)
 ```
+
+The model indicates that being in region 2 and 3 the effect of wealth on electoral performance is significant. And with heteroschedasticy considered, the test shows being in region 2 the wealth effect is significant.
+
+4. Return to your parsimonious model. Do you think you have found a causal and unbiased estimate? Please state the conditions under which you would have an unbiased and causal estimates. Do these conditions hold?
+
+We evaluate the diagnostic plot of the parsimonious model.
 
 ```{r fig.width=6.5, fig.height=8}
 par(mfrow = c(2,2))
 plot(model5.1.3)
 ```
-
-All the coefficients of the model are highly significant. 
-
-When wealth increases 1% voteshare increases by 1.2% in Region 1, assuming that voteshare is the margin of votes for the candidate. This effect increases in Region 2 by an additional 4% and in Region 3 by 6% over Region 1. 
-
-```{r}
-linearHypothesis(model5.1.3, c("regionRegion 2=0","regionRegion 3=0"), vcov=vcovHC)
-```
-
-Testing the null hypothesis that the _region_ coefficients are no different from 0 results in the rejection of the null hypothesis with a highly significant result. 
-
-
-4. Return to your parsimonious model. Do you think you have found a causal and unbiased estimate? Please state the conditions under which you would have an unbiased and causal estimates. Do these conditions hold?
-
-
 
 5. Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
 
