@@ -50,7 +50,7 @@ plot.ts(gas, main="New York Harbor conventional regular gasoline weekly
 
 **gas**: gas price stays flat (with minor drop) before 2002, then start an increasing trend, with some fluctuation between late 2005 and early 2008. A big price drop occurs early 2009, before it slows climbs back up.
 
-# Question 2:
+# Question 2
 Describe 3 examples you have used in your work or encounter in real life. Ideally, you can even load at least one of these time series, plot it, and the write a few statements to describe its characteristics.
 
 **Example 1**: Stock price
@@ -67,7 +67,7 @@ For Google, the price stays stable before mid July 2015, before have a big jump 
 **Example 3**: biometric data. With various wearables becoming popular, more biometric data are collected from daily life, including heartrate, sleep quality, activities, food intake, etc. Overtime those data yield different time series to indicate one's life style, healthness, and hopefully can be further utilized to predict or diagnose potential health problem.
 
 
-# Question 3:
+# Question 3
 Simulate a white noise series with 1000 random draws and plot (1) a time series plot and (2) a histogram. The usual reqirements on graphics (described) in Question 1) applied.
 
 ```{r}
@@ -80,7 +80,7 @@ hist(w, breaks=50, main='Histogram of 1000 Simulated White Noise',
 ```
 
 
-# Question 4:
+# Question 4
 Simulate (with 1000 random draws) two the following two zero-mean autoregressive model with order 1 (i.e. AR(1)) models:
 $$y_t = 0.9y_{t1} + w$$
 $$y_t = 0.2y_{t1} + w$$
@@ -115,7 +115,7 @@ hist(y2, breaks=50, main='Histogram of Simulated AR(1) Series',
 
 The time series plot of the first simulated series shows some cyclic pattern during the period, while the second series demonstrates a largely random pattern. The reason is first AR model has a bigger coefficient of $0.9$, which damps the change of next value, thus the series shows milder fluctuation than the second series. Nevertheless both series follow normal distribution. 
 
-# Question 5:
+# Question 5
 Simulate (with 1000 random draws) the following 3 models, Plot a time plot for each of the simulated series. Graph a histogram for each of thes simulated series. Write a few statements to compare the two series.
 
 1). A deterministic linear (time) trend of the form: $y_t = 10 + 0.5t$
