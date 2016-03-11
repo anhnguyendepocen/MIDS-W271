@@ -1,0 +1,177 @@
+---
+title: "HW5"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+1. Install the library ”astsa” using the function: install.packages(”astsa”)  
+
+```{r eval=FALSE}
+install.packages('astsa')
+```
+
+2. Load the library: library(astsa)  
+
+```{r}
+library(astsa)
+```
+
+3. Use the function str() to see the information of a particular data series, such as str(EQ5) for the Seismic Trace of Earthquake number 5 series  
+
+```{r}
+str(EQ5)
+```
+
+4. Plot the time series plots and histograms of the following 3 series. Feel free to use the codes provided in the R scripts. Make sure that each of your graph has a title, the axis ticks are clear, the axes are well-labelled, and use color intelligently. 
+
+5. Write a few sentences to describe each of the series.  
++ EQ5
++ flue
++ gas
+
+
+```{r}
+plot(EQ5,type="o", main="Seismic Trace of Earthquakes",
+     ylab="Seismic",
+     xlab="time t", col="blue")
+abline(v=1024, col='darkred')
+```
+
+The _EQ5_ series represents seismic trace of an earthquake [two phases or arrivals along the surface, the primary wave (t = 1,...,1024) and the shear wave (t = 1025, . . . , 2048)] recorded at a seismic station. The vertical line in the graph is a visual aid to see the primary and shear waves.
+
+
+```{r}
+plot(flu,type="o", main="Influenza Deaths",
+     ylab="Deaths per 10000 People",
+     xlab="Year", col="blue")
+```
+
+The _flu_ series represents monthly pneumonia and influenza deaths per 10,000 people in the United States for 11 years, 1968 to 1978. There appear to be two seasonalities involved - a winter and summer cycle and an overall downward trend.
+
+```{r}
+plot(gas,type="o", main="New York Harbor Conventional Regular Gasoline Weekly Spot Price",
+     ylab="FOB cents per Gallon",
+     xlab="Year", col="blue")
+```
+
+The _gas_ series represents the New York Harbor conventional regular gasoline weekly spot price FOB (in cents per gallon) from 2000 to 2010. There is a general upward trend that is interrupted by some event causing a spike then large drop in price.
+
+## Question 2
+
+Describe 3 examples you have used in your work or encounter in real life. Ideally, you can even load at least one of these time series, plot it, and the write a few statements to describe its characteristics.
+
+
+
+## Question 3
+
+Simulate a white noise series with 1000 random draws and plot (1) a time series plot and (2) a histogram. The usual reqirements on graphics (described) in Question 1) applied.
+
+```{r}
+w=rnorm(1000,0,1) # 1000 draws from a random normal distribution
+plot.ts(w, main="Simulated White Noise", col="navy",
+          ylab="Simulated values", xlab="Simulated Time Period")
+```
+```{r}
+dev.off()
+
+hist(w,main="Simulated White Noise", col="blue",
+     xlab="Simulated Values")
+```
+
+
+## Question 4:
+
+Simulate (with 1000 random draws) two the following two zero-mean autoregressive model with order 1 (i.e. AR(1)) models:
+
+$$y_{t} = 0.9y_{t1} + w$$
+$$y_{t} = 0.2y_{t1} + w$$
+
+Plot a time plot for each of the simulated series. Graph a histogram for each of thes
+simulated series. Write a few statements to compare the two series.
+
+```{r}
+length(w)
+z <- w
+q <- w
+for (t in 2:length(w)){
+  z[t] <- 0.9*z[t-1] + w[t]
+}
+for (t in 2:length(w)){
+  q[t] <- 0.2*q[t-1] + w[t]
+}
+```
+```{r}
+plot.ts(z, main="Simulated AR(ar=c(0.9)) Series", col="navy",
+        ylab="Values of the Simluated Series",
+        xlab="Simulated Time Period")
+```
+```{r}
+hist(z, breaks="FD",
+     main="AR(ar=c(0.9))",
+     xlab="Values of a Simluated Zero-Mean AR(1) Series",
+     col="blue", labels=TRUE)
+```
+```{r}
+plot.ts(q, main="Simulated AR(ar=c(0.2)) Series", col="navy",
+        ylab="Values of the Simluated Series",
+        xlab="Simulated Time Period")
+```
+```{r}
+hist(q, breaks="FD",
+     main="AR(ar=c(0.2))",
+     xlab="Values of a Simluated Zero-Mean AR(1) Series",
+     col="blue", labels=TRUE)
+```
+
+
+## Question 5:
+
+Simulate (with 1000 random draws) the following 3 models:
+1. A deterministic linear (time) trend of the form: $y_{t} = 10 + 0.5t$   
+2. Random walk without drift  
+3. Random walk with drift = 0.5  
+
+Plot a time plot for each of the simulated series. Graph a histogram for each of thes simulated series. Write a few statements to compare the two series.
+
+```{r}
+# Random walk with zero drift
+x=cumsum(w) 
+
+# Random walk with drift = 0.5
+wd = 0.5 + w; 
+xd = cumsum(wd) 
+
+```
+```{r}
+par(mfrow=c(1,1))
+plot.ts(xd, main="Random Walk with Drift, Random Walk without Drift, Deterministic Trend",
+        col="blue", ylab="Values", xlab="Simulated Time Period", bg=38)
+lines(0.2*(1:length(xd)), lty="dashed", col="navy")
+lines(x, col="purple")
+  # Add vertical lines
+  abline(v=c(100,200,300,400),col=3,lty=3)
+  # Add Legend
+  leg.txt <- c("RW with Drift", "Deterministic Linear Trend", "RW without Drift")
+  legend("topleft", legend=leg.txt, lty=c(1,2,1), col=c("blue","navy","purple"),
+         bty='n', cex=1, merge = TRUE, bg=336)
+
+par(mfrow=c(2,2))
+plot.ts(xd, main="Random Walk with Drift, Random Walk without Drift, Deterministic Trend",
+        col="blue", ylab="Values", xlab="Simulated Time Period", bg=38)
+lines(10+(0.5*(1:length(xd))), lty="dashed", col="navy")
+lines(x, col="purple")
+leg.txt <- c("RW with Drift", "Deterministic Linear Trend", "RW without Drift")
+legend("topleft", legend=leg.txt, lty=c(1,2,1), col=c("blue","navy","purple"),
+       bty='n', cex=1, merge = TRUE, bg=336)
+
+hist(xd, main="RW with Drift", col="blue")
+hist(10+(0.5*(1:length(xd))), main="Deterministic Linear Trend", col="navy")
+hist(x, main="RW without Drift", col="purple")
+
+```
+
