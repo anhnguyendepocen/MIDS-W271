@@ -2,6 +2,9 @@
 title: "W271 Lab2"
 author: "Lei Yang, Subhashini Raghunathan, Ron Cordell"
 date: "February 27, 2016"
+header-includes:   
+   - \usepackage{rotating}
+   - \usepackage{dcolumn}
 output: pdf_document
 
 ---
@@ -537,7 +540,7 @@ Again the estimated coefficients remain statistically insignificant.
 
 5. Compare the results of all of these regressions. Which one, if at all, would you prefer?
 
-```{r results='asis', echo=FALSE}
+```{r results='asis', echo=FALSE, message=FALSE}
 stargazer(model4.3, model4.4, model4.5, model4.5.na, m4.5.4,
           df=F, title='Results',
           dep.var.labels.include = FALSE,
@@ -619,7 +622,7 @@ se_tsls4 <- robust.se(tsls4)[,2]
 ```
 \newpage
 
-```{r echo=FALSE, results='asis'}
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 # generate regression table
 stargazer(ols1, tsls1, ols2, tsls2, ols3, tsls3, ols4, tsls4,
           se = list(se_ols1, se_tsls1, se_ols2, se_tsls2, 
@@ -629,11 +632,15 @@ stargazer(ols1, tsls1, ols2, tsls2, ols3, tsls3, ols4, tsls4,
           dep.var.labels = "Log Weekly Wage",
           omit = c("city*","rural"), 
           out = "Q4_table.html", df= F,
-          omit.labels = c("rural", "city")
+          omit.labels = c("rural", "city"),
+          float.env = "sidewaystable"
           )
 
 ```
+
 \newpage
+
+
 
 # Question 5. Classical Linear Model 2
 
@@ -678,7 +685,8 @@ panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
     if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
     text(0.5, 0.5, txt, cex = cex.cor * r)
 }
-
+```
+```{r echo=FALSE}
 pairs(voteshare~absolute_wealth + urb + lit, data=df2, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='shared vote, wealth, urban, literate')
 ```
 
@@ -771,7 +779,9 @@ plot(model5.1.3)
 
 5. Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
 
+$$cvoteshare=\beta_0+\beta_1cwealth+cu_i$$
 
+given $cov(\Delta u_i, \Delta wealth)=0$
 
 \newpage
 
@@ -797,6 +807,36 @@ Second, management is equally interested in understanding variables that might a
 ```{r}
 load('retailSales.Rdata')
 str(retailSales)
+```
+
+### Variable Analysis Matrix Plots
+
+```{r echo=FALSE, fig.width=6, fig.height=8}
+data6 <- retailSales[complete.cases(retailSales),]
+# another look reveals there are 76 observations with zero revenue, which is only a small percentage 0.3%
+sum(data6$Revenue==0, na.rm=T)
+# thus we get rid of records with revenue zero as well
+data6.2 <- data6[data6$Revenue!=0,]
+
+# now, check univariate and bivariate relations with our beloved matrix plot
+pairs(Revenue ~ Product.cost + Quantity + Unit.cost + Unit.price, 
+      data=data6.2, 
+      upper.panel=panel.smooth, 
+      lower.panel=panel.cor, 
+      diag.panel=panel.hist, 
+      main='Revenue, Product Cost, Quantity, Unit Cost, Unit Price')
+```
+It appears the distribution of the ratio variables is heavily skewed thus we check the relationships after performing log transformations.
+```{r echo=FALSE, fig.width=6, fig.height=8}
+# it appears the distribution of the ratio variables is heavily skewed
+# thus we check relations with log value, which has better normality in distribution
+pairs(log(Revenue)~ log(Product.cost) + 
+        log(Quantity) + log(Unit.cost) + log(Unit.price), 
+      data=data6.2, 
+      upper.panel=panel.smooth, 
+      lower.panel=panel.cor, 
+      diag.panel=panel.hist, 
+      main='Revenue, Product Cost, Quantity, Unit Cost, Unit Price')
 ```
 
 ### Revenue and Projected Revenue
@@ -936,7 +976,61 @@ hist(log(retailSales$Product.cost), main='Histogram of log Product Costs',
 
 ```
 
-## Model Building
+### Conditions and Unusual Observations
+
+There are many NAs in the data as a result of countries not carrying certain products or because some countries didn't start selling product until 2005.
+
+The 2007 data appears to be for about 1/2 year and not a full year. Since the data is by year this will require caution when using the 2007 as test data; we will restrict testing to be against 2006 complete year data.
+
+Golf equipment is the most profitable product category; mountaineering equipment the least.
+
+Web sales have become the dominant sales channel in all countries but a couple that still have measurable sales in other channels like email and fax. Sales channels in countries that have no significant revenue by that channel can be dropped as well as the related overhead costs.
+
+### Planned Revenue
+
+Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+
+```{r echo=FALSE}
+# get training and testing data
+data.train <- data6.2[data6.2$Year==2004 | data6.2$Year==2005, ]
+data.test <- data6.2[data6.2$Year==2006 | data6.2$Year==2007, ]
+```
+
+
+```{r}
+# fit model
+m6.3 <- lm(Revenue ~ Planned.revenue, data=data.train)
+confint(m6.3)
+# predict to validate
+pred <- predict.lm(m6.3, data.test)
+```
+
+Using training data, the confidence interval of planned revenue coefficient is $(0.969, 0.970)$, thus we can reject the null hypothesis that the average revenue is not different from 95 cents when the planned revenue increases by $1. 
+To evaluate the quality of the model, let predict revenue for test dataset, and check the scatter plot between prediction and true values. Similar with Q-Q plot, a good prediction should have a 45 degree line, and based on plot below it appears our prediction is quite close.
+
+```{r echo=F}
+# check the scatter plot between prediction and true value
+scatterplot(pred, data.test$Revenue)
+```
+
+Alternatively, one can perform a t-test between prediction and true, to see if the difference between the prediction and real value is significant or not.
+
+```{r}
+# t-test between prediction and true value
+t.test(pred, data.test$Revenue)
+```
+
+Obviously we can't reject the null that prediction and real value have no significant difference.
+
+### Model Terms and Interactions
+
+We have identified two approaches to regression model evaluation: significance and Log Mean Squared prediction error. In both approaches the models are approached the same: start with a parsimonious model and build upon it, testing for significance or prediction error. Significance is measured as estimating model parameters from years 2004-2005 of the data, and estimating a second set of model parameters from 2006-2007 model data. Measure the statistical different between the estimates. 
+
+Log Mean Square Error is measured by estimating model parameters from 2004-2005 data and then using that model to predict the 2006 data. 2007 data is left out of the prediction test because it is an incomplete year's worth of data. The square root of the sum of the squared differences of the log predicted values is used as a comparison to measure error. LMSE was chosen over Root Mean Squared Error because log transformations have been taken of the prediction variables already.
+
+We investigate the interactions of Country, Year, Cost by Product line and planned revenue.
+
+## Model Predictions and LMSE
 
 ### Simple Model - Revenue by Country
 
@@ -1075,3 +1169,11 @@ stargazer(model.rev.country, model.rev.country_year, model.rev.prod, model.rev.p
                            specify_decimal(model.rev.prod.lmse,4),
                            specify_decimal(model.rev.prod.2.lmse,4))))
 ```
+
+### Estimator Bias and Consistency
+
+The OLS model parameters may be biased if the estimates are not linearly related to the dependent variable, revenue. Endogeneity bias is another source of bias - factors such as business law, culture, relative economic strength are all examples of how estimates can be biased. While country is taken into account in the model, broad cultural influences that transcend country boundaries are not.
+
+### Instrumental Variable Approach
+
+An IV approach that could improve the forecasting model is to take into account cultural norms that favor some products over others. For example, an IV variable to guage golf products would be the number of golf courses in a country, or a golf courses per capita value.
