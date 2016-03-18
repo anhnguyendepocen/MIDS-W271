@@ -1,0 +1,1179 @@
+---
+title: "W271 Lab2"
+author: "Lei Yang, Subhashini Raghunathan, Ron Cordell"
+date: "February 27, 2016"
+header-includes:   
+   - \usepackage{rotating}
+   - \usepackage{dcolumn}
+output: pdf_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1: Broken Rulers
+
+You have a ruler of length 1 and you choose a place to break it using a uniform probability distribution. Let random variable X represent the length of the left piece of the ruler. X is distributed uniformly in [0, 1]. You take the left piece of the ruler and once again choose a place to break it using a uniform probability distribution. Let random variable Y be the length of the left piece from the second break.
+
+1. Find the conditional expectation of $Y$ given $X$, $E(Y|X)$.
+
+$$f(x) = 
+\begin{cases}
+1, & 0 \leq x \leq 1 \\
+0, & x < 0 \text{ or } x > 1
+\end{cases}$$
+
+$$E(X) = \int_{-\infty}^{\infty}x f(x) dx$$
+
+$$E(X) = \int_{0}^{1}x dx = \frac{1}{2}x^{2}\Big|_{0}^{1} = \frac{1}{2} - 0 = \frac{1}{2}$$
+
+Now we take the left part of the ruler, assuming the ruler starts at 0 and the left half has length $E(X)$. Breaking the left part of the ruler at position Y which has a uniform probability distribution:
+
+$$f(y) = 
+\begin{cases}
+\frac{1}{E(X)}, & 0 \leq y \leq E(X) \\
+0, & 1 y < 0 \text{ or } y > E(X)
+\end{cases}$$
+
+$$E(Y) = \int_{-\infty}^{\infty}y f(y) dy$$
+
+$$E(Y) = \int_{0}^{E(X)}\frac{1}{E(X)}\;y\;dy = \frac{1}{2}\frac{1}{E(X)}y^{2}\Big|_{0}^{E(X)} = \frac{1}{2}\frac{1}{E(X)}E(X)^{2} = \frac{1}{2}E(X)$$
+
+Therefore, since $E(X) = \frac{1}{2}$ and since $E(Y)$ is conditional on X to begin with:
+
+$$E(Y \big|X) = \frac{1}{2}E(X)$$
+
+2. Find the unconditional expectation of $Y$ . One way to do this is to apply the law of iterated expectations, which states that $E(Y) = E(E(Y|X))$. The inner expectation is the conditional expectation computed above, which is a function of $X$. The outer expectation finds the expected value of this function.
+
+$$E(Y) = E(E(Y\big|X))$$
+
+$$E(Y\big|X) = \frac{1}{2}E(X) \text{ therefore } E(Y) = E(\frac{1}{2}E(X))$$
+
+$$\text{Since } E(X) = \frac{1}{2} \text{ we have: }E(Y) = E(\frac{1}{2}\times\frac{1}{2}) = \frac{1}{4}$$
+
+3. Write down an expression for the joint probability density function of $X$ and $Y$ , $f_{X,Y} (x, y)$.
+
+$$f_{X,Y}(x,y) = \begin{cases}\frac{1}{x}, & 0 \leq y \leq x\\0, & y<0 \text{ or } y>1\end{cases}$$
+
+4. Find the conditional probability density function of $X$ given $Y$ , $f_{X|Y}$ .
+
+The conditional probability function of ${X}$ given ${Y}$ is given by the joint probability density function divided by the marginal probability density function:
+
+$$f_{X}(x | Y=y) = \frac{f_{X,Y}(x,y)}{f_{Y}(y)}$$
+
+Given $y$ we know that $x$ must be on the interval $[y,1]$. Therefore we have:
+
+$$f_{X|Y}=\frac{1}{1-y}$$
+
+5. Find the expectation of $X$, given that $Y$ is $1/2$, $E(X |Y = 1/2)$
+
+$$E(X|Y) = \int_{y}^{1}xf_{X|Y}dx = \int_{y}^{1}x\frac{1}{1-y}dx = \frac{1}{1-y}\frac{X^{2}}{2} \Big|_y^1 = \frac{\frac{1}{2}-\frac{y^2}{2}}{1-y} = \frac{1+y}{2}$$
+
+Therefore $E(X | Y = \frac{1}{2})=\frac{3}{4}$
+
+\newpage
+
+# Question 2: Investing
+
+Suppose that you are planning an investment in three different companies. The payoff per unit you invest in each company is represented by a random variable. $A$ represents the payoff per unit invested in the first company, $B$ in the second, and $C$ in the third. $A$, $B$, and $C$ are independent of each other. Furthermore, $var(A) = 2var(B) = 3var(C)$.
+You plan to invest a total of one unit in all three companies. You will invest amount $a$ in the first company, $b$ in the second, and $c$ in the third, where $a,b,c \in [0,1]$ and $a+b+c = 1$. Find, the values of $a$, $b$, and $c$ that minimize the variance of your total payoff.
+
+Total Payoff $TP=aA+bB+cC$
+
+Variation or the total payoff can be written as 
+
+$$var(TP)=var(aA+bB+cC)$$
+
+Expanding variance we have 
+$$a^2var(A)+b^2var(B)+c^2varC+2ab\; cov(A,B)+2bc\; cov(B,C)+2ac\;cov(A,C)$$
+
+We assume that the three companies are independent, therefore 
+$$cov(A,B) = cov(B,C) = cov(A,C) = 0$$
+
+Since $var(A)=2 var(B) = 3 var(C)$ we can write $var(TP)$ as:
+$$var(TP) = (3a^{2}+\frac{3 b^{2}}{2}+c^2) var(C)$$
+
+Since we are given $a+b+c=1$ we can rewrite as:
+
+$$var(TP) = (3a^2+\frac{3}{2]b^2} + (1-a-b)^2) var(C) = (4a^2+2ab-2a+\frac{5}{2}b^2-2b+1) var(C)$$
+
+To minimize $var(TP)$ we take the partial derivatives with respect to a and b and set them equal to 0:
+
+$$\frac{\partial}{\partial a} var(TP) = 8a+2b-2$$
+$$\frac{\partial}{\partial b} var(TP) = 2a+5b-2$$
+
+Setting these two equations to 0 and solving for $a$ and $b$ we arrive at
+
+$$a=\frac{1}{6}, b=\frac{1}{3}, c=\frac{1}{2}$$
+
+
+\newpage
+
+# Question 3: Turtles
+
+Next, suppose that the lifespan of a species of turtle follows a uniform distribution over $[0,\theta]$. Here, parameter $\theta$ represents the unknown maximum lifespan. You have a random sample of $n$ individuals, and measure the lifespan of each individual $i$ to be $y_{i}$.
+
+1. Write down the likelihood function, $l(\theta)$ in terms of $y_{1}, y_{2}, ..., y_{n}$.
+
+$$f(y|\theta) = \begin{cases}
+\frac{1}{\theta}, & 0 \leq y \leq \theta \\
+0, & y < 0 \text{ or } y > \theta
+\end{cases}$$
+
+$$L(\theta) = \prod_{i=1}^{n}f(y;\theta) = \begin{cases}
+\theta^{-n}, & 0 \leq y_{i} \leq \theta \\
+0, & y_{i} < 0 \text{ or } y_{i} > \theta
+\end{cases}$$
+
+2. Based on the previous result, what is the maximum-likelihood estimator for $\theta$?
+
+Since $L(\theta) = \theta^{-n}$ for $0 \leq y_{i} \leq \theta$ then it follows that $\theta \geq y_{i}$ for all $i$.
+
+Therefore the MLE for $\theta$ is $\hat{\theta} = max(x_{1},x_{2},...,x_{n})$
+
+3. Let $\hat\theta_{ml}$ be the maximum likelihood estimator above. For the simple case that $n = 1$, what is the expectation of $\hat\theta_{ml}$ , given $\theta$?
+
+For $n=1$ we have $\hat{\theta}_{ml} = y_{1}$, or the value of the sample. Therefore the expectation is given by:
+
+$$E(\hat{\theta}_{ml}|\theta)=E(y_{1}|\theta)={\int_0}^{\theta}f(y|\theta)y\;dy=\int_{0}^{\theta}\frac{1}{\theta}y\;dy=\frac{1}{\theta}\frac{y^2}{2}\Big|_0^\theta = \frac{\theta}{2}$$
+
+4. Is the maximum likelihood estimator biased?
+
+Since $E(\hat{\theta}_{ml}|\theta) = \frac{\theta}{2}$ it is a biased estimator; it does not equal $\theta$
+
+5. For the more general case that $n \geq 1$, what is the expectation of $\hat\theta_{ml}$?
+
+For $n > 1, E(\hat{\theta}_{ml}|\theta) = \int_{0}^{\theta}f(y_{max}|\theta)y_{max}\;dy = \int_{0}^{\theta}\frac{1}{\theta}y\;dy=\frac{\theta}{2}$
+
+6. Is the maximum likelihood estimator consistent?
+
+For very large $n$ the MLE is always $\frac{\theta}{2}$, so it is not consistent.
+
+\newpage
+
+# Question 4. Classical Linear Model 1
+
+### Background
+
+The file WageData2.csv contains a dataset that has been used to quantify the impact of education on wage. One of the reasons we are proving another wage-equation exercise is that this area by far has the most (and most well-known) applications of instrumental variable techniques, the endogenity problem is obvious in this context, and the datasets are easy to obtain.
+
+### The Data
+
+You are given a sample of 1000 individuals with their wage, education level, age, working experience, race (as an indicator), father’s and mother’s education level, whether the person lived in a rural area, whether the person lived in a city, IQ score, and two potential instruments, called $z1$ and $z2$.
+
+The dependent variable of interest is $wage$ (or its transformation), and we are interested in measuring "return" to education, where return is measured in the increase (hopefully) in wage with an additional year of education.
+
+## Question 4.1
+
+
+Conduct an univariate analysis (using tables, graphs, and descriptive statistics found in the last 7 lectures) of all of the variables in the dataset.
+
+Also, create two variables: (1) natural log of wage (name it $logWage$) (2) square of experience (name it $experienceSquare$)
+
+```{r message=FALSE, echo=FALSE}
+library(car)
+library(lmtest)
+library(sandwich)
+library(psych)
+library(ivpack)
+library(lattice)
+library(dplyr)
+library(stargazer)
+```
+
+```{r}
+df1 <- read.csv('WageData2.csv')
+```
+
+```{r}
+str(df1)
+```
+\newpage
+```{r}
+summary(df1)
+```
+
+Examine the _wage_ variable
+
+```{r}
+summary(df1$wage)
+hist(df1$wage, breaks=50, main='Histogram of wage', xlab='wage')
+boxplot(df1$wage, main='Box Plot of Wage', ylab='Dollars')
+```
+
+Wage is right-skewed with a long tail. This will cause issues without transformation or perhaps using the _logWage_ variable instead.
+
+Example the _logWage_ variable.
+
+```{r}
+summary(df1$logWage)
+hist(df1$logWage, breaks=50, main='Histogram of logWage', xlab='logWage')
+boxplot(df1$logWage, main='Box Plot of log(Wage)', ylab='log(Dollars)')
+```
+
+The _logWage_ variable appears to correct most of the issues with the _wage_ variable.
+
+Examine the _education_ variable
+
+```{r}
+summary(df1$education)
+hist(df1$education, breaks=18, main='Histogram of education', xlab='education (years)')
+boxplot(df1$education, main='Box Plot of Education', ylab='Years')
+```
+
+The _education_ variable appears to be left-skewed with a long tail on the left. It also has a very strong peak at 12 years, corresponding to high school completion. There is a second, smaller peak at 16 years, corresponding to completing undergraduate studies.
+
+Examine the _age_ variable.
+
+```{r}
+summary(df1$age)
+hist(df1$age, breaks=10, main='Histogram of age', xlab='age (years)')
+boxplot(df1$age, main='Box Plot of Age', ylab='Years')
+```
+
+The distribution of the _age_ samples are left-skewed with a strong peak at 24 years. Therefore there will be some weighting of this analysis towards recent college graduates or high school graduates with 6 years of experience.
+
+Examine the _raceColor_ indicator variable.
+
+```{r}
+summary(df1$raceColor)
+```
+
+The _raceColor_ variable is an indicator variable with a mean of 0.238, indicating nearly 25% non-caucasion samples in the data set.
+
+Examine the _dad_eductation_ variable
+
+```{r}
+summary(df1$dad_education)
+hist(df1$dad_education, breaks=20, main='Histogram of dad_education', xlab='dad_education (years)')
+boxplot(df1$dad_education, main='Box Plot of Fathers Education', ylab='Years')
+```
+
+The _dad_education_ variable shows a somewhat symmetrical distribution except for two strong peaks, one at 8 years and one at 12 years. This reflects the relative generation and time period of the data set when eduction beyond high school was rare and it was common to leave school after 8th grade. Nearly 24% of the samples of this variable are NA.
+
+Examine _mom_education_ variable
+
+```{r}
+summary(df1$mom_education)
+hist(df1$mom_education, breaks=20, main='Histogram of mom_education', xlab='mom_education (years)')
+boxplot(df1$mom_education, main='Box Plot of Mothers Education', ylab='Years')
+```
+
+The _mom_education_ variable is similar to the _dad_education_ variable except the 8 year peak is much less pronounced. There are 12.8% NA's in variable samples. The box plot shows that there are definite issues with the distribution as the mean is also the first quartile.
+
+Examine the _rural_, _city_  indicator variables
+
+```{r}
+summary(df1$rural)
+summary(df1$city)
+
+```
+
+The _rural_ vs. _city_ percentages are 39.1% and 71.2% respectively.
+
+Examine the _z1_ and _z2_ indicator variables
+
+```{r}
+summary(df1$z1)
+summary(df1$z2)
+```
+
+The _z1_ and _z2_ variables are instrument variable candidates.
+
+Examine _IQScore_ variable
+
+```{r}
+summary(df1$IQscore)
+hist(df1$IQscore, breaks=50, main='Histogram of IQScore', xlab='IQScore')
+boxplot(df1$IQscore, main='Box Plot of IQ Score', ylab='IQ Score')
+```
+
+The _IQScore_ variable appears to be symmetric near the mean.
+
+Create variables for the natural log of wage and the square of experience.
+
+```{r}
+df1$lnWage <- log(df1$wage)
+df1$experienceSquare <- df1$experience^2
+```
+
+## Question 4.2
+
+Conduct a bivariate analysis (using tables, graphs, descriptive statistics found in the last 7 lectures) of $wage$ and $logWage$ and all the other variables in the datasets.
+
+Examine _wage_, _education_, _experience_, _experienceSquare_ in a scatterplot matrix
+
+```{r fig.width=6.5, fig.height=8}
+scatterplotMatrix(~ wage + education + experience + IQscore, data=df1)
+```
+\newpage
+
+Examing _logWage_, _age_, _dad_education_, _mom_education_
+
+```{r fig.width=6.5, fig.height=8}
+scatterplotMatrix(~ logWage + age + dad_education + mom_education, data=df1)
+```
+\newpage
+
+```{r echo=FALSE}
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "green", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, use='complete.obs'))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+pairs(wage~education+experience+age, data=df1, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='wage, education, experience, age')
+```
+
+```{r echo=FALSE}
+pairs(logWage~experienceSquare+IQscore+dad_education+mom_education, data=df1, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='logWage, experience2, IQ, parent education')
+```
+
+Exploring race effects on _eduction_ and _wage_
+```{r fig.width=6.5, fig.height=8}
+plot(df1$education, df1$logWage, col=ifelse(df1$raceColor==0,'red','green'), 
+    main='Effect of Race on Eduction and Wage', xlab='Education (years)',
+    ylab='log Wage')
+legend('topleft',legend=c('0','1'),col=c('red','green'), pch='o',title='    raceColor    ',horiz=TRUE)
+```
+\newpage
+
+## Question 4.3
+
+Regress $log(wage)$ on education, experience, age, and raceColor.
+
+```{r}
+model4.3 <- lm(logWage ~ education + experience + age + raceColor, data=df1)
+```
+
+1. Report all the estimated coefficients, their standard errors, t-statistics, F-statistic of the regression, $R^2$, $adjusted\; R^2$, and degrees of freedom.
+
+```{r}
+summary(model4.3)
+model4.3.se <- coeftest(model4.3, vcov=vcovHC)
+model4.3.se
+```
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model4.3, sub.caption="Model Diagnostic Plots")
+```
+
+
+2. Explain why the degrees of freedom takes on the specific value you observe in the regression output.
+
+There are 996 degrees of freedom in the regression output, which is the size of the data set less the number of estimated parameters of the model and the intercept: $DF = 1000 - 3 - 1 = 996$ 
+
+3. Describe any unexpected results from your regression and how you would resolve them (if the intent is to estimate return to education, condition on race and experience).
+
+The age variable is linearly related to one of the other variables which is why the coefficient for age is NA in the model summary. The model actually only estimates the coefficients for eduction, experience, raceColor and the intercept. To resolve this particular issue we drop the variable from the model, which the lm() function has done for us.
+
+The raceColor coefficient is also a surprise at how large it is, coming in as a 26% decrease in wages, controlling for education and experience. The other coefficients are much less at 8% increase per year of eduction controlling for raceColor and experience, and 3.5% increase in wages controlling for education and raceColor. To understand the size of the coefficient for raceColor I would first analyze its contribution to the explanation of the variance. I would also investigate the interaction of race with education and race with experience to gain more insight how those factors may correlate to each other.
+
+4. Interpret the coefficient estimate associated with education
+
+The coefficient associated with education results in a 7.9% increase in wages controlling for experience and raceColor, and is highly statistically significant.
+
+5. Interpret the coefficient estimate associated with experience
+
+The coefficient associated with experience results in a 3.5% increase in wages controlling for education and raceColor, and is highly statistically significant.
+
+## Question 4.4
+
+Regress $log(wage)$ on education, experience, experienceSquare, and raceColor.
+
+```{r}
+model4.4 <- lm(log(wage) ~ education + experience + experienceSquare + raceColor, data=df1)
+summary(model4.4)
+model4.4.se <- coeftest(model4.4, vcov=vcovHC)
+model4.4.se
+```
+
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model4.4, sub.caption="Model Diagnostic Plots")
+```
+\newpage
+
+1. Plot a graph of the estimated effect of experience on wage.
+
+```{r}
+plot(x=NULL, y=NULL, xlim=c(5,35),ylim=c(0,.1), ylab='Change',
+     xlab='Years', main='Estimated Change in Wage by Experience')
+abline(a = coef(model4.4)[3], b = coef(model4.4)[4], lwd = 2, col = "red")
+abline(v = 10, lwd = 2, col = "blue")
+
+```
+
+
+2. What is the estimated effect of experience on wage when experience is 10 years?
+
+```{r}
+# Calculate % Change directly from the model parameters
+100*(coef(model4.4)[3]+10*coef(model4.4)[4])
+```
+
+6.37% increase in wage for 10 years of experience
+\newpage
+
+## Question 4.5
+
+Regress $logWage$ on _education_, _experience_, _experienceSquare_, _raceColor_, _dad_education_, _mom_education_, _rural_, _city_.
+
+```{r}
+model4.5 <- lm(logWage ~ education + experience + experienceSquare + raceColor +
+                 dad_education + mom_education + rural + city, data=df1)
+summary(model4.5)
+model4.5.se <- coeftest(model4.5, vcov=vcovHC)
+model4.5.se
+```
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model4.5, sub.caption="Model Diagnostic Plots")
+```
+
+
+1. What are the number of observations used in this regression? Are missing values a problem? Analyze the missing values, if any, and see if there is any discernible pattern with wage, education, experience, and raceColor.
+
+There are 1000 - 277 = 723 observations.
+
+There is a fixed linear relationship between education and experience.
+
+```{r message=FALSE, echo=FALSE}
+library(mice)
+library(VIM)
+```
+```{r fig.width=6.5, fig.height=6}
+aggr_plot <- aggr(df1[,c('education','wage','dad_education','mom_education',
+                         'age','experience','raceColor','rural','city')], 
+                  col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, 
+                  labels=names(data), cex.axis=.7, gap=3, 
+                  ylab=c("Histogram of missing data","Pattern"))
+```
+
+Over 25% of the dad_education data is missing, and about 12% of the mom_education data.
+
+
+2. Do you just want to "throw away" these observations?
+
+The NA observations force the throwing out of the corresponding rows of the data frame, significantly reducing the power of the model. In addition, from the boxplot below we can see the variation of these two variables is not quite large, we would apply some rule to interpolate the missing values.
+
+
+```{r}
+boxplot(df1[,c('mom_education','dad_education')])
+```
+
+
+3. How about blindly replace all of the missing values with the average of the observed values of the corresponding variable? Rerun the original regression using all of the observations?
+
+One could replace the NA values with the mean of the variable but additional bias is introduced on top of what bias may already exist. Adding a large number of mean values will also reduce the variance.
+
+```{r}
+# replace the NA values in the dod_eduction and mom_education with respective mean values
+df1.na <- df1
+df1.na$dad_education <- ifelse(is.na(df1.na$dad_education), 
+                               mean(df1$dad_education, na.rm=TRUE), 
+                               df1.na$dad_education)
+df1.na$mom_education <- ifelse(is.na(df1.na$mom_education), 
+                               mean(df1$mom_education, na.rm=TRUE), 
+                               df1.na$mom_education)
+summary(df1$dad_education)
+summary(df1.na$dad_education)
+summary(df1$mom_education)
+summary(df1.na$mom_education)
+```
+```{r}
+model4.5.na <- lm(logWage ~ education + experience + experienceSquare + raceColor +
+                 dad_education + mom_education + rural + city, data=df1.na)
+summary(model4.5.na)
+model4.5.na.se <- coeftest(model4.5.na, vcov=vcovHC)
+model4.5.na.se
+```
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model4.5.na, sub.caption="Model Diagnostic Plots - NA replaced with mean")
+```
+
+Regressing against a modified _dad_education_ and _mom_education_ that has the mean of the variable in place of NA does not improve the model. The estimates of the two coefficients remains highly statistically insignificant.
+
+4. How about regress the variable(s) with missing values on education, experience, and raceColor, and use this regression(s) to predict (i.e. "impute") the missing values and then rerun the original regression using all of the observations?
+
+```{r}
+# regression for parent education
+data <- df1
+m4.5.4.mom <- lm(mom_education~education+experience+raceColor, data=data)
+m4.5.4.dad <- lm(dad_education~education+experience+raceColor, data=data)
+# predict for missing records
+m_miss = is.na(data$mom_education)
+d_miss = is.na(data$dad_education)
+fill_mom <- predict.lm(m4.5.4.mom, data[m_miss,])
+fill_dad <- predict.lm(m4.5.4.dad, data[d_miss,])
+# fill back in
+data$dad_education_fill = data$dad_education
+data$mom_education_fill = data$mom_education
+data$mom_education_fill[m_miss] = fill_mom
+data$dad_education_fill[d_miss] = fill_dad
+# rerun the regression
+m4.5.4 <- lm(logWage ~ education+experience+experienceSquare+raceColor
+             +dad_education_fill+mom_education_fill+rural+city, data=data)
+summary(m4.5.4)
+coeftest(m4.5.4, vcov=vcovHC)
+```
+
+
+Again the estimated coefficients remain statistically insignificant.
+
+5. Compare the results of all of these regressions. Which one, if at all, would you prefer?
+
+```{r results='asis', echo=FALSE, message=FALSE}
+stargazer(model4.3, model4.4, model4.5, model4.5.na, m4.5.4,
+          df=F, title='Results',
+          dep.var.labels.include = FALSE,
+          column.labels = c('with NA','mean','imputed'),
+          column.separate = c(3,1,1),
+          intercept.bottom = FALSE)
+
+```
+
+The first model is preferred from Question 4.3 because it has the highest F-statistic even though it doesn't have the highest Adjusted $R^2$. It is also the simpler model with the fewest parameters (most parsimonious).
+\newpage
+
+## Question 4.6
+
+1. Consider using $z_{1}$ as the instrumental variable (IV) for education. What assumptions are needed on $z_{1}$ and the error term (call it, $u$)?
+
+The assumptions to be satisfied are $cov(z_{1},u)=0$ and that if the variable for which we want to use $z_{i}$ as an indicator is $x$ then $cov(x,z_{1}) \neq 0$
+
+2. Suppose $z_{1}$ is an indicator representing whether or not an individual lives in an area in which there was a recent policy change to promote the importance of education. Could $z_{1}$ be correlated with other unobservables captured in the error term?
+
+There are several scenarios in which $z_{1}$ could be correlated with the error term, $u$.
+- Adjacent regions and policy may have an effect, especially in regions with more industry or higher paying jobs. There is more money to be spent on education in that case. There is no per capita expenditure on education variable in the data set so this would be in the error term.
+- Local and regional attitudes can also have an effect in the error term, such as whether the region contains a college or university town. People in these localities may have a propensity to favor emphasis on education. 
+
+3. Using the same specification as that in question 4.5, estimate the equation by 2SLS, using both $z_{1}$ and $z_{2}$ as instrument variables. Interpret the results. How does the coefficient estimate on education change?
+
+First let's check the relationship between $z_{1}$ zand $z_{2}$ on the outcome variable.
+
+```{r}
+model4.6_z1 <- lm(logWage ~ z1, data=df1)
+summary(model4.6_z1)
+```
+
+There is a statistically significant relationship between $z_{1}$ and _education_.
+
+```{r}
+model4.6_z2 <- lm(logWage ~ z2, data=df1)
+summary(model4.6_z2)
+```
+
+There is a highly statistically significant relationship between $z_{2}$ and _education_.
+
+Performing a 2SLS regression using both $z_{1}$ and $z_{2}$
+
+```{r}
+
+ols1 <- lm(logWage ~ education + experience, data=data)
+se_ols1 <- robust.se(ols1)[,2]
+
+ols2 <- lm(logWage ~ education + experience + experienceSquare + raceColor, data=data)
+se_ols2 <- robust.se(ols2)[,2]
+
+ols3 <- lm(logWage ~ education + experience + experienceSquare + raceColor
+           + dad_education + mom_education, data=data)
+se_ols3 <- robust.se(ols3)[,2]
+
+ols4 <- lm(logWage ~ education + experience + experienceSquare + raceColor
+           + dad_education + mom_education + rural + city, data=data)
+se_ols4 <- robust.se(ols4)[,2]
+
+tsls1 <- ivreg(logWage ~ education + experience | factor(z1)*factor(z2) + experience, 
+               data = data)
+se_tsls1 <- robust.se(tsls1)[,2]
+
+tsls2 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor |
+                 factor(z1)*factor(z2) + experience + experienceSquare, data=data)
+se_tsls2 <- robust.se(tsls2)[,2]
+
+tsls3 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+               + dad_education + mom_education | factor(z1)*factor(z2) + experience 
+               + experienceSquare + dad_education + mom_education, data=data)
+se_tsls3 <- robust.se(tsls3)[,2]
+
+tsls4 <- ivreg(logWage ~ education + experience + experienceSquare + raceColor 
+               + dad_education + mom_education + rural + city | factor(z1)*factor(z2) 
+               + experience + experienceSquare + dad_education + mom_education
+               + rural + city, data=data)
+se_tsls4 <- robust.se(tsls4)[,2]
+```
+\newpage
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+# generate regression table
+stargazer(ols1, tsls1, ols2, tsls2, ols3, tsls3, ols4, tsls4,
+          se = list(se_ols1, se_tsls1, se_ols2, se_tsls2, 
+                    se_ols3, se_tsls3, se_ols4, se_tsls4),
+          covariate.labels=c("education", "experience", "experience squared", 
+                             "race (1 = black)", "dad Education", "mom education"),
+          dep.var.labels = "Log Weekly Wage",
+          omit = c("city*","rural"), 
+          out = "Q4_table.html", df= F,
+          omit.labels = c("rural", "city"),
+          float.env = "sidewaystable"
+          )
+
+```
+
+\newpage
+
+
+
+# Question 5. Classical Linear Model 2
+
+
+The dataset, ”wealthy candidates.csv”, contains candidate level electoral data from a developing country. Politically, each region (which is a subset of the country) is divided in to smaller electoral districts where the candidate with the most votes wins the seat. This dataset has data on the financial wealth and electoral performance (voteshare) of electoral candidates. We are interested in understanding whether or not wealth is an electoral advantage. In other words, do wealthy candidates fare better in elections than their less wealthy peers?
+
+Data Exploration
+
+Note: no descriptive information was provided with this data set but the data set is found to contain the following variables:
+
+Variable  | Description 
+----------|---------------------
+ _region_ | region of the country
+ _urb_   | percentage of population in urban areas
+ _lit_   | literary rate of disctrict
+ _voteshare_ | unknown exactly what this is - margin of victory?
+ _absolute_wealth_ | candidate wealth
+
+```{r}
+df2 <- read.csv('wealthy_candidates.csv')
+str(df2)
+summary(df2)
+```
+
+```{r echo=FALSE}
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot = FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = "green", ...)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y, use='complete.obs'))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+```
+```{r echo=FALSE}
+pairs(voteshare~absolute_wealth + urb + lit, data=df2, upper.panel=panel.smooth, lower.panel=panel.cor, diag.panel=panel.hist, main='shared vote, wealth, urban, literate')
+```
+
+
+We can see that _urb_ and _absolute_wealth_ have issues with distribution and are highly skewed. Creating a new variable, _logUrb_, as the log(urb) does help with the distribution. However, _absolute_wealth_ doesn't get as much help from this treatment.
+
+Examining the _absolute_wealth_ variable we can see there are a large number of 2.0e+00 values, which is also shown as the minimum value in the summary.
+
+```{r}
+sum(na.omit(df2$absolute_wealth==2.0))
+sum(na.omit(df2$absolute_wealth > 2.0))
+sum(na.omit(df2$absolute_wealth > 200.0))
+```
+
+There are 435 entries with a value of 2.0 and there are 2062 entries with values greater than 2.0 and also greater than 200.0. The count starts dropping slightly around 2000.0. There are also 162 NA values.
+
+After a bit of research we found that the 2.0 value is not a mistake but the actual data. It is the minimum wealth recorded for those candidates so we leave the data as it is.
+
+```{r}
+# rename the absolute_wealth variable for convenience
+df2$wealth<-df2$absolute_wealth
+df2$logWealth <- log(df2$wealth)
+df2$logUrb<- log(df2$urb)
+summary(df2)
+```
+
+```{r fig.width=6.5, fig.height=8}
+scatterplotMatrix(~voteshare + logWealth + lit + logUrb, data=df2)
+```
+\newpage
+
+1. Begin with a parsimonious, yet appropriate, specification. Why did you choose this model? Are your results statistically significant? Based on these results, how would you answer the research question? Is there a linear relationship between wealth and electoral performance?
+
+```{r}
+model5.1 <- lm(voteshare ~ logWealth, data=df2)
+coeftest(model5.1, vcov=vcovHC)
+```
+
+There is a linear relationship between _logWealth_ and _voteshare_, statistically significant at the .002 level but the practical significance is small.
+
+The most parsimonious and direct model is the simple OLS model that expresses the relationship between vote share and wealth.
+
+2. A team-member suggests adding a quadratic term to your regression. Based on your prior model, is such an addition warranted? Add this term and interpret the results. Do wealthier candidates fare better in elections?
+
+We can use a quadratic of wealth to measure marginal effects.
+
+```{r}
+df2$lwealthSquared <- df2$logWealth**2
+model5.1.2 <- lm(voteshare ~ logWealth + lwealthSquared, data=df2)
+coeftest(model5.1.2, vcov=vcovHC)
+```
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model5.1.2)
+```
+
+```{r}
+linearHypothesis(model5.1.2, c("lwealthSquared = 0"), vcov=vcovHC)
+```
+
+The results indicate a stastistically significant relationship at the p = .04 level for $log(wealth)^2$. The coefficients suggest a diminishing return to voteshare and the point at which the return to voteshare becomes 0 is
+
+```{r}
+abs(coef(model5.1.2)[2]/2*coef(model5.1.2)[3])
+```
+
+The null hypothesis that the $logWealth^2$ parameter is not statistically different than 0 is rejected with p = .04198.
+
+
+3. Another team member suggests that it is important to take into account the fact that different regions have different electoral contexts. In particular, the relationship between candidate wealth and electoral performance might be different across states. Modify your model and report your results. Test the hypothesis that this addition is not needed.
+
+We evaluate the interaction terms between logWage and region:
+
+```{r}
+model5.1.3 <- lm(voteshare ~ logWealth*factor(region), data = df2)
+summary(model5.1.3)
+coeftest(model5.1.3, vcov = vcovHC)
+```
+
+The model indicates that being in region 2 and 3 the effect of wealth on electoral performance is significant. And with heteroschedasticy considered, the test shows being in region 2 the wealth effect is significant.
+
+4. Return to your parsimonious model. Do you think you have found a causal and unbiased estimate? Please state the conditions under which you would have an unbiased and causal estimates. Do these conditions hold?
+
+We evaluate the diagnostic plot of the parsimonious model.
+
+```{r fig.width=6.5, fig.height=8}
+par(mfrow = c(2,2))
+plot(model5.1.3)
+```
+
+5. Someone proposes a difference in difference design. Please write the equation for such a model. Under what circumstances would this design yield a causal effect?
+
+$$cvoteshare=\beta_0+\beta_1cwealth+cu_i$$
+
+given $cov(\Delta u_i, \Delta wealth)=0$
+
+\newpage
+
+# Question 6. Classical Linear Model 3
+
+Your analytics team has been tasked with analyzing aggregate revenue, cost and sales data, which have been provided to you in the R workspace/data frame retailSales.Rdata.
+
+Your task is two fold. First, your team is to develop a model for predicting (forecasting) revenues. Part of the model development documentation is a backtesting exercise where you train your model using data from the first two years and evaluate the model's forecasts using the last two years of data.
+
+Second, management is equally interested in understanding variables that might affect revenues in support of management adjustments to operations and revenue forecasts. You are also to identify factors that affect revenues, and discuss how useful management's planned revenue is for forecasting revenues.
+
+&nbsp;&nbsp;&nbsp;&nbsp;Your analysis should address the following:
+
+* Exploratory Data Analysis: focus on bivariate and multivariate relationships
+* Be sure to assess conditions and identify unusual observations
+* Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+* Explain what interaction terms in your model mean in context supported by data visualizations
+* Give two reasons why the OLS model coefficients may be biased and/or not consistent, be specific.
+* Propose (but do not actually implement) a plan for an IV approach to improve your forecasting model.
+
+## Exploratory Data Analysis
+
+```{r}
+load('retailSales.Rdata')
+str(retailSales)
+```
+
+### Variable Analysis Matrix Plots
+
+```{r echo=FALSE, fig.width=6, fig.height=8}
+data6 <- retailSales[complete.cases(retailSales),]
+# another look reveals there are 76 observations with zero revenue, which is only a small percentage 0.3%
+sum(data6$Revenue==0, na.rm=T)
+# thus we get rid of records with revenue zero as well
+data6.2 <- data6[data6$Revenue!=0,]
+
+# now, check univariate and bivariate relations with our beloved matrix plot
+pairs(Revenue ~ Product.cost + Quantity + Unit.cost + Unit.price, 
+      data=data6.2, 
+      upper.panel=panel.smooth, 
+      lower.panel=panel.cor, 
+      diag.panel=panel.hist, 
+      main='Revenue, Product Cost, Quantity, Unit Cost, Unit Price')
+```
+It appears the distribution of the ratio variables is heavily skewed thus we check the relationships after performing log transformations.
+```{r echo=FALSE, fig.width=6, fig.height=8}
+# it appears the distribution of the ratio variables is heavily skewed
+# thus we check relations with log value, which has better normality in distribution
+pairs(log(Revenue)~ log(Product.cost) + 
+        log(Quantity) + log(Unit.cost) + log(Unit.price), 
+      data=data6.2, 
+      upper.panel=panel.smooth, 
+      lower.panel=panel.cor, 
+      diag.panel=panel.hist, 
+      main='Revenue, Product Cost, Quantity, Unit Cost, Unit Price')
+```
+
+### Revenue and Projected Revenue
+
+Revenue for 2007 is either declining from previous years or it is not a complete year's worth of data.
+
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
+bc.gross_profit <- barchart(Revenue/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
+update(bc.gross_profit, border="transparent")
+```
+
+\newpage
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
+bc.gross_profit <- barchart(Planned.revenue/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Projected Revenue (thousands)")
+update(bc.gross_profit, border="transparent")
+```
+\newpage
+
+### Gross Profit By Country and Product Line
+
+The following two charts shows gross profit for each year broken into product lines. The first chart shows all countries on the same scale which shows that the United States is the largest retailer. The second chart is the same information presented such that each bar chart has an independent scale for gross profit. It's important to note that Switzerland and Australia have no sales data for 2004.
+
+```{r fig.width=6, fig.height=8.25, echo=FALSE}
+bc.gross_profit <- barchart(Gross.profit/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1),
+         ylab="Gross Profit (thousands)")
+update(bc.gross_profit, border="transparent")
+```
+\newpage
+
+### Gross Profit by Country and Product Line - Individually Scaled
+
+The Personal Accessory and Golf Equipment categories are responsible for the highest gross profits, with Camping Equipment following closely. The Outdoor Protection and Mountaineering Equipment product lines are not nearly as profitable.
+
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
+bc.gross_profit <- barchart(Gross.profit/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1),
+         ylab="Gross Profit (thousands)")
+update(bc.gross_profit, border="transparent")
+```
+\newpage
+
+### Gross Profit By Order Method
+
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
+bc.gross_profit <- barchart(Revenue/1000.0 ~ as.factor(Year) | Order.method.type, groups=Product.line,
+         data=retailSales, scales=list(y="free"), layout=c(1,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
+update(bc.gross_profit, border="transparent")
+```
+\newpage
+
+### Product Costs
+
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
+bc.gross_profit <- barchart(Product.cost/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Product Cost (thousands)")
+update(bc.gross_profit, border="transparent")
+```
+\newpage
+
+### Ratio of Revenue to Product Costs
+
+```{r fig.width=6, fig.height=8.5, echo=FALSE}
+bc.gross_profit <- barchart(Revenue/Product.cost ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Ratio of Revenue to Product Cost")
+update(bc.gross_profit, border="transparent")
+```
+
+### Items Sold By Country
+
+The leading product category by quantity is Personal Accessories, with Mountaineering Equipment and Camping Equipment following closely. 
+
+```{r fig.width=6, fig.height=8.25, echo=FALSE}
+bc.quantity <- barchart(Quantity/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=retailSales, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Quantity Sold (thousands)")
+update(bc.quantity, border="transparent")
+```
+\newpage
+
+### Items Sold By Country and Order Method
+
+In this chart is obvious that web sales is the dominant order method, so much so that most other sales have become nearly insignificant in most countries by 2006 and 2007.
+
+```{r fig.width=6, fig.height=8.25, echo=FALSE}
+bc.quantity <- barchart(Quantity/1000.0 ~ as.factor(Year) | Retailer.country, groups=Order.method.type,
+         data=retailSales, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Order Methods", columns=1), ylab="Quantity Sold (thousands)")
+update(bc.quantity, border="transparent")
+```
+\newpage
+
+### Variable Checking
+
+The _Revenue_ variable is highly right skewed but a log transformation helps with this. Also, it appears that the revenue for 2007 doesn't contain a full year of data judging from the overall numbers. Alternatively the revenue is in decline for 2007. However it might be a good idea to evalate 2007 as if it is missing data from the second half of the year.
+
+```{r}
+hist(retailSales$Revenue, main='Revenue Histogram', xlab='Revenue')
+hist(log(retailSales$Revenue), main='Log(Revenue) Histogram', xlab='log(Revenue)')
+```
+```{r}
+summary(retailSales$Revenue)
+summary(retailSales$Planned.revenue)
+```
+
+As an investigation compare an "adjusted" 2007 revenue value that is twice the given amount and visualize as a graph.
+```{r}
+# Investigate revenue for 2007
+rs.test <- retailSales
+rs.test$Revenue <- ifelse(rs.test$Year==2007, 2*rs.test$Revenue, rs.test$Revenue)
+
+```
+
+The graph would indicate that we are probably missing the last half of 2007 data. We should keep this in mind when evaulating models.
+```{r fig.width=5.5, fig.height=8.5, echo=FALSE}
+bc.adj_revenue <- barchart(Revenue/1000.0 ~ as.factor(Year) | Retailer.country, groups=Product.line,
+         data=rs.test, scales=list(y="free"), layout=c(3,7),
+         auto.key=list(title="Product Lines", columns=1), ylab="Revenue (thousands)")
+update(bc.adj_revenue, border="transparent")
+```
+
+Product Costs histogram shows that we should use the log of product costs to deal with the significant skew in the untransformed variable.
+```{r}
+hist(retailSales$Product.cost, main='Histogram of Product Costs', 
+     xlab='Product Costs USD$')
+hist(log(retailSales$Product.cost), main='Histogram of log Product Costs', 
+     xlab='log Product Costs USD$')
+
+```
+
+### Conditions and Unusual Observations
+
+There are many NAs in the data as a result of countries not carrying certain products or because some countries didn't start selling product until 2005.
+
+The 2007 data appears to be for about 1/2 year and not a full year. Since the data is by year this will require caution when using the 2007 as test data; we will restrict testing to be against 2006 complete year data.
+
+Golf equipment is the most profitable product category; mountaineering equipment the least.
+
+Web sales have become the dominant sales channel in all countries but a couple that still have measurable sales in other channels like email and fax. Sales channels in countries that have no significant revenue by that channel can be dropped as well as the related overhead costs.
+
+### Planned Revenue
+
+Is the change in the average revenue different from 95 cents when the planned revenue increases by $1?
+
+```{r echo=FALSE}
+# get training and testing data
+data.train <- data6.2[data6.2$Year==2004 | data6.2$Year==2005, ]
+data.test <- data6.2[data6.2$Year==2006 | data6.2$Year==2007, ]
+```
+
+
+```{r}
+# fit model
+m6.3 <- lm(Revenue ~ Planned.revenue, data=data.train)
+confint(m6.3)
+# predict to validate
+pred <- predict.lm(m6.3, data.test)
+```
+
+Using training data, the confidence interval of planned revenue coefficient is $(0.969, 0.970)$, thus we can reject the null hypothesis that the average revenue is not different from 95 cents when the planned revenue increases by $1. 
+To evaluate the quality of the model, let predict revenue for test dataset, and check the scatter plot between prediction and true values. Similar with Q-Q plot, a good prediction should have a 45 degree line, and based on plot below it appears our prediction is quite close.
+
+```{r echo=F}
+# check the scatter plot between prediction and true value
+scatterplot(pred, data.test$Revenue)
+```
+
+Alternatively, one can perform a t-test between prediction and true, to see if the difference between the prediction and real value is significant or not.
+
+```{r}
+# t-test between prediction and true value
+t.test(pred, data.test$Revenue)
+```
+
+Obviously we can't reject the null that prediction and real value have no significant difference.
+
+### Model Terms and Interactions
+
+We have identified two approaches to regression model evaluation: significance and Log Mean Squared prediction error. In both approaches the models are approached the same: start with a parsimonious model and build upon it, testing for significance or prediction error. Significance is measured as estimating model parameters from years 2004-2005 of the data, and estimating a second set of model parameters from 2006-2007 model data. Measure the statistical different between the estimates. 
+
+Log Mean Square Error is measured by estimating model parameters from 2004-2005 data and then using that model to predict the 2006 data. 2007 data is left out of the prediction test because it is an incomplete year's worth of data. The square root of the sum of the squared differences of the log predicted values is used as a comparison to measure error. LMSE was chosen over Root Mean Squared Error because log transformations have been taken of the prediction variables already.
+
+We investigate the interactions of Country, Year, Cost by Product line and planned revenue.
+
+## Model Predictions and LMSE
+
+### Simple Model - Revenue by Country
+
+```{r}
+# First aggregate revenue by country across all attributes
+revenues <- group_by(retailSales, Retailer.country, Year)
+revenue.by_country <- summarise(revenues, revenues = sum(Revenue, na.rm=TRUE))
+# split into train and test
+revenue.by_country.train <- subset(revenue.by_country, Year<2006)
+revenue.by_country.test <- subset(revenue.by_country, Year>2005)
+# create a simple OLS model for log(revenue) ~ country
+model.rev.country <- lm(log1p(revenues) ~ Retailer.country, 
+                        data=revenue.by_country.train )
+summary(model.rev.country)
+# predict the outcome of the test data set
+model.rev.country.pred <- predict(model.rev.country, revenue.by_country.test)
+# measure against test data
+model.rev.country.lmse <- sqrt(sum((model.rev.country.pred - 
+                                       log1p(revenue.by_country.test$revenues))^2))
+model.rev.country.lmse
+
+```
+The model summary indicates single coefficient testing indicates that all coefficients are significant except Switzerland. This is expected since Switzerland does not have 2004 sales data. However, we notice that Australia doesn't have 2004 data either and it's used as the basis of the country factor variable. The $R^2=0.05308$ indicates that this model doesn't account for very much of the variation in revenue. The model is not significant with an F-statistic of .49.
+
+Let's evaluate the model against the 2006-2007 test data set, keeping in mind that 2007 test data may not be complete.
+
+Evaluate against 2006 only:
+
+```{r}
+# predict the outcome of the test data set for only 2006
+model.rev.country.pred <- predict(model.rev.country, subset(revenue.by_country.test,Year==2006))
+# measure against test data
+model.rev.country.lmse <- sqrt(sum((model.rev.country.pred - 
+                              log1p(subset(revenue.by_country.test,Year==2006)$revenues))^2))
+model.rev.country.lmse
+
+```
+
+### Simple Model 2: Adding Year to Revenue By Country
+
+```{r}
+# create a simple OLS model for log(revenue) ~ country
+model.rev.country_year <- lm(log1p(revenues) ~ Retailer.country + Year, 
+                        data=revenue.by_country.train )
+summary(model.rev.country_year)
+# predict the outcome of the test data set
+model.rev.country_year.pred <- predict(model.rev.country_year, revenue.by_country.test)
+# measure against test data
+model.rev.country_year.lmse <- sqrt(sum((model.rev.country_year.pred - 
+                                       log1p(revenue.by_country.test$revenues))^2))
+model.rev.country_year.lmse
+```
+
+The $R^2=0.1264$ is better but the F-statistic shows that the model is not significant, p = .291 and the Log Mean Square Error increased to 12.8136
+
+```{r}
+# predict the outcome of the test data set for only 2006
+model.rev.country_year.pred <- predict(model.rev.country_year, subset(revenue.by_country.test,Year==2006))
+# measure against test data
+model.rev.country_year.lmse <- sqrt(sum((model.rev.country_year.pred - 
+                                       log1p(subset(revenue.by_country.test,Year==2006)$revenues))^2))
+model.rev.country_year.lmse
+```
+
+Prediction 2006 data drops the LMSE back down to 13.75788 but still larger than with country only.
+
+### Model 3: Adding in Product Costs
+
+```{r}
+# First aggregate revenue by country across all attributes
+revenue.by_prod <- 
+  summarise(group_by(retailSales, Product.line, Retailer.country, Year), 
+     revenues = sum(Revenue, na.rm=TRUE),
+     prodCosts = sum(Product.cost, na.rm=TRUE),
+     plannedRev = sum(Planned.revenue, na.rm=TRUE))
+
+# transform the revenue and product cost variables
+revenue.by_prod$revenues <- log1p(revenue.by_prod$revenues)
+revenue.by_prod$prodCosts <- log1p(revenue.by_prod$prodCosts)
+
+# split into train and test
+revenue.by_prod.train <- subset(revenue.by_prod, Year<2006)
+revenue.by_prod.test <- subset(revenue.by_prod, Year>2005)
+
+# create a simple OLS model for log(revenue) ~ Product.cost
+model.rev.prod <- lm(revenues ~ prodCosts + Product.line + Retailer.country + Year, 
+                        data=revenue.by_prod.train )
+summary(model.rev.prod)
+# predict the outcome of the test data set
+model.rev.prod.pred <- predict(model.rev.prod, subset(revenue.by_prod.test, Year==2006))
+# measure against test data
+model.rev.prod.lmse <- sqrt(sum((model.rev.prod.pred - 
+                                 subset(revenue.by_prod.test, Year==2006)$revenues))^2)
+model.rev.prod.lmse
+```
+
+The investigation into the inclusion of products costs by product line, country and year into the model shows a significant improvement. However, since we're adding more variables to the model the $R^2$ will naturally increase, although $R^2=0.9999$ and a highly significant F-statistic indicate a model that fits the data better. The LMSE has dropped to 1.435359 with this model which indicates we are not in danger of overfitting as yet.
+
+Interestingly, the country significance levels have dropped to the point where we consider removing them from the model, which we do in the final step. 
+
+### Model 4: Adding Planned Revenue, Removing Country
+
+```{r}
+# create a simple OLS model for log(revenue) ~ Product.cost
+model.rev.prod.2 <- lm(revenues ~ plannedRev + 
+                       prodCosts + Product.line + 
+                       Year, 
+                        data=revenue.by_prod.train )
+coeftest(model.rev.prod.2, vcov=vcovHC)
+# predict the outcome of the test data set
+model.rev.prod.2.pred <- 
+  predict(model.rev.prod.2, 
+          subset(revenue.by_prod.test, Year==2006))
+# measure against test data
+model.rev.prod.2.lmse <- 
+  sqrt(sum((model.rev.prod.2.pred - 
+            subset(revenue.by_prod.test, Year==2006)$revenues))^2)
+model.rev.prod.2.lmse
+```
+
+This model removes the country variable but adds in the Planned.revenue variable. The model is improved with a LMSE of 0.445751 and highly significant F-statistic. The model is simplified by the removal of the country variable as well, helping to reduce variance while keeping bias as low as possible.
+
+## Model Summary
+
+```{r results='asis', echo=FALSE}
+specify_decimal <- function(x, k) format(round(x, k), nsmall=k)
+stargazer(model.rev.country, model.rev.country_year, model.rev.prod, model.rev.prod.2,
+          df=F, title='Results',
+          dep.var.caption = 'Log Revenue',
+          dep.var.labels.include = FALSE,
+          intercept.bottom = FALSE,
+          omit='Retailer',
+          omit.labels= 'Retailer Countries?',
+          add.lines=list(c('LMSE', specify_decimal(model.rev.country.lmse,4),
+                           specify_decimal(model.rev.country_year.lmse,4),
+                           specify_decimal(model.rev.prod.lmse,4),
+                           specify_decimal(model.rev.prod.2.lmse,4))))
+```
+
+### Estimator Bias and Consistency
+
+The OLS model parameters may be biased if the estimates are not linearly related to the dependent variable, revenue. Endogeneity bias is another source of bias - factors such as business law, culture, relative economic strength are all examples of how estimates can be biased. While country is taken into account in the model, broad cultural influences that transcend country boundaries are not.
+
+### Instrumental Variable Approach
+
+An IV approach that could improve the forecasting model is to take into account cultural norms that favor some products over others. For example, an IV variable to guage golf products would be the number of golf courses in a country, or a golf courses per capita value.
