@@ -102,7 +102,7 @@ summary(x2)
 sd(x2)
 
 # put our graphs in the same page/display canvas
-plot.ts(x1, col='blue', 
+plot.ts(x2, col='blue', 
         xlab='Simulated Time Period',
         ylab='Simulated Variable Units')
 title('(3c) Fig 1: Random Walk 0.5 Drift Simulated Series')
