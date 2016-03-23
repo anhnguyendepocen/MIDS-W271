@@ -58,7 +58,7 @@ pacf(ts1, xlab='Lag', main='Partial Autocorrelation for Time Series 1')
 **1.5 Estimate the series using the ar() function.**
 
 ``` {r}
-ts1.ar <- ar(ts1)
+ts1.ar <- ar(ts1, model='mle')
 ```
 
 **1.6 Report the estimated AR parameters, the order of the model, and standard errors.**
@@ -108,7 +108,7 @@ The histogram of the simulated AR(2) series shows a somewhat symmetrical distrib
 
 ```{r}
 # fit an AR model to the X series
-x.ar <- ar(x)
+x.ar <- ar(x, method='mle')
 
 # estimated coefficients
 x.ar$ar
@@ -128,39 +128,26 @@ The model is estimated as an AR(3) model. However, examining the AIC output of t
 **2.4 Construct a 95% confidence intervals for the parameter estimates of the estimated model. Do the “true” model parameters fall within the confidence intervals? Explain the 95% confidence intervals in this context.**
 
 ```{r}
-  # Confidence Interval of the AR parameters:
-x.ar$ar + c(-2,2)*sqrt(x.ar$asy.var)
+# Confidence Interval of the AR parameters:
+x.ar$ar + matrix(c(2,-2, 2, -2, 2, -2),
+                 nrow = 3, ncol = 2, byrow = TRUE)*
+  sqrt(diag(x.ar$asy.var.coef))
 
-# Confidence intervals are given by the covariance matrix variance elements
-# x1 estimated coefficent confidence interval
--1.96*sqrt(x.ar$asy.var.coef[1,1])+x.ar$ar[1]
-1.96*sqrt(x.ar$asy.var.coef[1,1])+x.ar$ar[1]
+# Actual model parameters:
 
-# x1 actual coefficient
 5/6
-
-# x2 estimated coefficent confidence interval
--1.96*sqrt(x.ar$asy.var.coef[2,2])+x.ar$ar[2]
-1.96*sqrt(x.ar$asy.var.coef[2,2])+x.ar$ar[2]
-
-# x2 actual coefficient
 -1/6
-
-# x3 estimated coefficent confidence interval
--1.96*sqrt(x.ar$asy.var.coef[3,3])+x.ar$ar[3]
-1.96*sqrt(x.ar$asy.var.coef[3,3])+x.ar$ar[3]
-
-# x3 actual coefficient
 0
+
 ```
 
-The above calculations are incorrect.
+The first two actual AR process parameters are contained in the confidence intervals of their estimated counterparts but the third paramter is not.
 
 **2.5 Is the estimated model stationary or non-stationary?**
 
 ```{r}
 # Find the absolute values of the roots of the lagged polynomial
-abs(polyroot(c(1, -0.8090353, 0.0840377, 0.1805376)))
+abs(polyroot(c(1, -0.81405014, 0.08889983, 0.19629863)))
 ```
 
 The absolute values of the roots of the lagged polynomial are all larger than 1 therefore the estimated model is stationary.
