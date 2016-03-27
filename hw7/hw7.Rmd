@@ -1,0 +1,161 @@
+---
+title: "MIDS W271-4 Homework 7"
+author: "Subhashini R., Lei Yang, Ron Cordell"
+date: "March 22, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1:
+
+**1.1 Load hw07_series1.csv**
+
+```{r}
+df <- read.csv('hw07_series1.csv')
+```
+
+**1.2 Describe the basic structure of the data and provide summary statistics of the series**
+
+```{r}
+# take a look at the data structure
+str(df)
+
+# take a look at the first part of the data
+head(df,10)
+
+# get a summary of the data
+summary(df)
+```
+
+The data consists of 74 observations of a single variable, X10.01. There is no information on the sampling rate or if the samples fit into an overall time structure such as years, quarters, months or something else (frequency). Therefore we will create a time series object from it without imposing those parameters.
+
+```{r}
+ts1 <- ts(df, start=1, end=74, frequency=1)
+```
+
+**1.3 Plot histogram and time-series plot of the series. Describe the patterns exhibited in histograrm and time-series plot. For time series analysis, is it sufficient to use only histogram to describe a series?**
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,1))
+hist(ts1, main='Histogram of Time Series', xlab='X10.01', breaks=20)
+plot.ts(ts1, col='blue', 
+        xlab='Index',
+        ylab='X10.01',
+        main='Time Series Plot of X10.01 Series')
+```
+\newpage
+
+**1.4 Plot the ACF and PACF of the series. Describe the patterns exhibited in the ACF and PACF.**
+
+```{r}
+acf(ts1, xlab='Lag', main='Autocorrelation for Time Series 1')
+pacf(ts1, xlab='Lag', main='Partial Autocorrelation for Time Series 1')
+```
+
+**1.5 Estimate the series using the ar() function.**
+
+``` {r}
+ts1.ar <- ar(ts1, model='mle')
+```
+
+**1.6 Report the estimated AR parameters, the order of the model, and standard errors.**
+
+```{r}
+# AR model estimated parameters
+ts1.ar$ar
+
+# AR model order
+ts1.ar$order
+
+# AR model standard errors
+ts1.ar$asy.var.coef
+```
+
+
+## Question 2:
+
+**2.1 Simulate a time series of length 100 for the following model. Name the series x.**
+$$x_{t} = \frac{5}{6}x_{t-1} - \frac{1}{6}x_{t-2} + \omega_{t}$$
+
+```{r}
+set.seed(1)
+x <- arima.sim(n = 100, list(ar = c(5/6, -1/6), ma=0))
+```
+
+
+**2.2 Plot the correlogram and partial correlogram for the simulated series. Comments on the plots.**
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(x, main='Histogram of AR(2) Simulated Series',
+     xlab='X', breaks=30)
+plot.ts(x, 
+        main='Time Series Plot of AR(2) Simulated Series',
+        xlab='Index', ylab='X')
+acf(x, main='Correlogram of AR(2) Simulated Series',
+    xlab='Lag')
+pacf(x,
+     xlab='Lag', 
+     main='Partial Correlogram of AR(2) Simulated Series')
+```
+
+The histogram of the simulated AR(2) series shows a somewhat symmetrical distribution about a mean of 0 but it doesn't look normally distrubuted. The time series plot shows downward and upward trends over some time indices but no persistent trend is apparent. The correlogram of the simulated series shows an quickly decaying but oscillating trend to 0. The partial correlogram of the simulated series shows a rapid dropoff after the first lag.
+
+**2.3 Estimate an AR model for this simulated series. Report the estimated AR parameters, standard errors, and the order of the AR model.**
+
+```{r}
+# fit an AR model to the X series
+x.ar <- ar(x, method='mle')
+
+# estimated coefficients
+x.ar$ar
+
+# show the model order
+x.ar$order
+
+# show the parameter estimate standard errors
+x.ar$asy.var.coef
+
+# show the model AIC output
+x.ar$aic
+```
+
+The model is estimated as an AR(3) model. However, examining the AIC output of the `ar()` command shows that a more parsimonious AR(2) model may be available with a very slightly larger AIC.
+
+**2.4 Construct a 95% confidence intervals for the parameter estimates of the estimated model. Do the “true” model parameters fall within the confidence intervals? Explain the 95% confidence intervals in this context.**
+
+```{r}
+# Confidence Interval of the AR parameters:
+x.ar$ar + matrix(c(2,-2, 2, -2, 2, -2),
+                 nrow = 3, ncol = 2, byrow = TRUE)*
+  sqrt(diag(x.ar$asy.var.coef))
+
+# Actual model parameters:
+
+5/6
+-1/6
+0
+
+```
+
+The first two actual AR process parameters are contained in the confidence intervals of their estimated counterparts but the third paramter is not.
+
+**2.5 Is the estimated model stationary or non-stationary?**
+
+```{r}
+# Find the absolute values of the roots of the lagged polynomial
+abs(polyroot(c(1, -0.81405014, 0.08889983, 0.19629863)))
+```
+
+The absolute values of the roots of the lagged polynomial are all larger than 1 therefore the estimated model is stationary.
+
+**2.6 Plot the correlogram of the residuals of the estimated model. Comment on the plot.**
+
+```{r}
+acf(x.ar$resid, na.action=na.omit, main='AR Model Residuals Correlogram')
+```
+
+The correlogram shows no autocorrelation in the residuals.
