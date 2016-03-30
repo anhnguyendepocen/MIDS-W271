@@ -1,0 +1,68 @@
+---
+title: "W271 HW8"
+author: "Subhashini R., Lei Yang, Ron Cordell"
+date: "March 29, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Build an univariate linear time series model (i.e AR, MA, and ARMA models) using the series in hw08_series.csv.  
+
+* Use all the techniques that have been taught so far to build the model, including date examination, data visualization, etc.  
+* All the steps to support your final model need to be shown clearly.  
+* Show that the assumptions underlying the model are valid.  
+* Which model seems most reasonable in terms of satisfying the model’s underling assumption?  
+* Evaluate the model performance (both in- and out-of-sample)  
+* Pick your “best” models and conduct a 12-step ahead forecast. Discuss your results. Discuss the choice
+of your metrics to measure “best”.  
+
+```{r}
+# Load the libraries and tools
+library(astsa)
+library(zoo)
+library(forecast)
+library(stargazer)
+```
+
+```{r}
+# load the CSV file
+df <- read.csv('hw08_series.csv')
+str(df)
+```
+
+The CSV file for the HW8 time series consists of two variables: an X variable that is the time interval and an x value corresponding to the time period. There is no information about the time interval or units of the values. 
+
+A time series object is created from the dataframe for further analysis.
+
+``` {r}
+ts1 <- ts(df$x)
+str(ts1)
+summary(ts1)
+head(ts1)
+tail(ts1)
+```
+\newpage
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1, main='Series Histogram', xlab='x', breaks=20) 
+plot.ts(ts1, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='HW8 Time Series')
+acf(ts1, main='Autocorrelation')
+pacf(ts1, main='Partial Autocorrelation')
+```
+
+The time series plot reveals that the HW8 time series is a persistently upward trending series and is not stationary. The autocorrelation shows a very long decay over more than 25 lags while the partial autocorrelation shows statistically significant results at lags 13 and 25.
+
+The ACF plot is indicative of an ARMA underlying model because of the long taper - most likely an ARMA(2,1) model.
+
+```{r}
+ts1.fit <- arima(ts1, order=c(2,0,1))
+ts1.fit
+summary(ts1.fit)
+```
+
