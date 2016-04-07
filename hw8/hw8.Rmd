@@ -56,12 +56,12 @@ acf(ts1, main='Autocorrelation')
 pacf(ts1, main='Partial Autocorrelation')
 ```
 
-The time series plot reveals that the HW8 time series is a persistently upward trending series and is not stationary. The autocorrelation shows a very long decay over more than 25 lags while the partial autocorrelation shows statistically significant results at lags 13 and 25.
+The time series plot reveals that the HW8 time series is a persistently upward trending series and is not stationary. The autocorrelation shows a very long decay over more than 25 lags while the partial autocorrelation shows statistically significant results at lags 13 and 25, indicating a strong seasonal component that happens every 12 periods, in addition to the inter-period seasonality.
 
 The ACF plot is indicative of an ARMA underlying model because of the long taper - most likely an ARMA(2,1) model.
 
 ```{r}
-ts1.fit <- arima(ts1, order=c(2,0,1))
+ts1.fit <- Arima(ts1, order=c(2,0,1))
 ts1.fit
 summary(ts1.fit)
 ```
@@ -78,12 +78,64 @@ acf(ts1.fit$residuals)
 pacf(ts1.fit$residuals)
 ```
 
-These residuals show a definite trend in that they become more volatile and larger over time. The distribution is slightly skewed. The autocorrelation shows correlations at lags 12 and 24 while the partial autocorrelation shows statistically significant effects at lag 2, 9-14 and 24.
+These residuals show a definite trend in that they become more volatile and larger over time. The distribution is slightly skewed. The autocorrelation shows correlations at lags 12 and 24 while the partial autocorrelation shows statistically significant effects at lag 
+2, 9-14 and 24. These indicate that the seasonality component remains and the series is not stationary.
+
+Comparative statistics for the time series, fitted model and residuals shows that the model is reasonably close to the time series.
 
 ```{r}
-plot.ts(ts1)
-plot.ts(ts1.fit$series)
-plot.ts(ts1.fit$residuals)
-
+fit.df <- data.frame(cbind(ts1, fitted(ts1.fit), ts1.fit$residuals))
+class(df)
+stargazer(fit.df, type="text",title="Descriptive Statistics", digits=1)
 ```
 
+
+```{r}
+par(mfrow=c(1,1))
+plot.ts(ts1, main="Time Series vs. ARMA(2,2) Model and Residuals",
+        ylab="Actual and Estimated Values", xlab="Period",
+        col="navy", ylim=c(30,150), xlim=c(0,380), lty=2)
+par(new=T)
+plot.ts(fitted(ts1.fit), xlab='', ylab='', axes=F, col='blue',
+        ylim=c(30,150), xlim=c(0,380), lty=1)
+leg.txt <- c("Original Series", "Estimate Series", "Residuals")
+legend("topleft",legend=leg.txt,lty=c(1,1,2),
+      col=c("navy","blue","green"),
+      bty='n', cex=1)
+par(new=T)
+plot.ts(ts1.fit$residuals, axes=F,xlab='',ylab='',col="green",
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50),
+        xlim=c(0,380))
+axis(side=4,col='green')
+mtext("Residuals",side=4,line=2, col='green')
+```
+
+Forecast Model
+
+``` {r}
+ts1.fcast <- forecast.Arima(ts1.fit, h=24)
+ts1.fcast
+summary(ts1.fcast$mean)
+```
+
+``` {r}
+par(mfrow=c(1,1))
+plot(ts1.fcast,
+     main='24-Step Ahead Forecast, Original Series and Esitmated Series',
+     xlab='Simulated Time Period',
+     ylab='Predicted Value and Actual Value',
+     ylim=c(30,160), xlim=c(0,390), lty=1, col='blue')
+par(new=T)
+plot.ts(fitted(ts1.fit), axes=F,
+        ylab='', xlab='',
+        col="navy", ylim=c(30,160), xlim=c(0,390), lty=2)
+legend("topleft",legend=leg.txt,lty=c(1,1,2),col=c("navy","blue","green"),
+      bty='n', cex=1)
+par(new=T)
+plot.ts(ts1.fit$residuals, axes=F,xlab='',ylab='',col="green",
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50),xlim=c(0,390) )
+axis(side=4,col='green')
+mtext("Residuals",side=4,line=2, col='green')
+```
+
+```
