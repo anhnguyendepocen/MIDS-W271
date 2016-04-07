@@ -81,6 +81,13 @@ pacf(ts1.fit$residuals)
 These residuals show a definite trend in that they become more volatile and larger over time. The distribution is slightly skewed. The autocorrelation shows correlations at lags 12 and 24 while the partial autocorrelation shows statistically significant effects at lag 
 2, 9-14 and 24. These indicate that the seasonality component remains and the series is not stationary.
 
+```{r}
+Box.test(ts1, type="Ljung-Box")
+```
+
+The outcome of the Ljung-Box test indicates that we can reject the null hypothesis of series independence. This agrees with our notion that the residuals remain correlated.
+
+
 Comparative statistics for the time series, fitted model and residuals shows that the model is reasonably close to the time series.
 
 ```{r}
@@ -89,6 +96,7 @@ class(df)
 stargazer(fit.df, type="text",title="Descriptive Statistics", digits=1)
 ```
 
+The original time series and the ARIMA(1,1,1)(0,1,1)[12] model plot shows that the model captures the behavior of the time series very well and the in-sample fit is good.
 
 ```{r}
 par(mfrow=c(1,1))
@@ -110,10 +118,48 @@ axis(side=4,col='green')
 mtext("Residuals",side=4,line=2, col='green')
 ```
 
-Forecast Model
+We will re-estimate the model by omitting the final 12 time periods and then compare the forecast to the actual values to measure the out-of-sample fit of the model.
+
+```{r}
+# fit all but the last 12 periods of the time series
+ts1.fit_short <- Arima(ts1[1:360], order=c(2,0,1))
+ts1.fit_short
+summary(ts1.fit_short)
+ts1.fcast_short <- forecast.Arima(ts1.fit_short, h=12)
+ts1.fcast_short
+summary(ts1.fcast_short$mean)
+```
+
+```{r}
+par(mfrow=c(1,1))
+plot(ts1.fcast_short,
+     main='12-Step Ahead Forecast, Original Series and Esitmated Series',
+     xlab='', ylab='',
+     ylim=c(30,160), xlim=c(0,390), lty=1, col='blue')
+par(new=T)
+plot.ts(ts1, main="Time Series  ARMA(2,2) Forcast Model and Residuals",
+        ylab="Actual and Estimated Values", xlab="Period",
+        col="navy", ylim=c(30,160), xlim=c(0,390), lty=2)
+leg.txt <- c("Original Series", "Estimate Series", "Residuals")
+legend("topleft",legend=leg.txt,lty=c(1,1,2),
+      col=c("navy","blue","green"),
+      bty='n', cex=1)
+par(new=T)
+plot.ts(ts1.fit_short$residuals, axes=F,xlab='',ylab='',col="green",
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50),
+        xlim=c(0,380))
+axis(side=4,col='green')
+mtext("Residuals",side=4,line=2, col='green')
+```
+
+The out-of-series forecast created by estimating a model that omits the final 12 periods of the original time series does not capture the observed values of those final 12 periods. Instead the first half of the final 12 periods are within the statistical boundaries of the forecast but the second half exhibit seasonality effects that are outside the bounds of the forecast.
+
+Forecast Model for 12 time periods. 
+
+It's apparent from the summary statistics and from the forecast graph that the projected forecast for the next 24 periods shows a level trend with a mean value of 146.3. However this forecast doesn't contain the actual observed behavior of the original series; neither the trend nor the seasonality are present.
 
 ``` {r}
-ts1.fcast <- forecast.Arima(ts1.fit, h=24)
+ts1.fcast <- forecast.Arima(ts1.fit, h=12)
 ts1.fcast
 summary(ts1.fcast$mean)
 ```
@@ -121,7 +167,7 @@ summary(ts1.fcast$mean)
 ``` {r}
 par(mfrow=c(1,1))
 plot(ts1.fcast,
-     main='24-Step Ahead Forecast, Original Series and Esitmated Series',
+     main='12-Step Ahead Forecast, Original Series and Esitmated Series',
      xlab='Simulated Time Period',
      ylab='Predicted Value and Actual Value',
      ylim=c(30,160), xlim=c(0,390), lty=1, col='blue')
@@ -138,4 +184,3 @@ axis(side=4,col='green')
 mtext("Residuals",side=4,line=2, col='green')
 ```
 
-```

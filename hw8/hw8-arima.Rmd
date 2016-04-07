@@ -207,7 +207,7 @@ axis(side=4, col='green')
 
 ```
 
-Forecast Model
+The forecast model is projected out 24 time periods and indicates the continued upward trend and seasonality. The confidence interval plots around the mean forecast show a similar behavior, although it's noteable that the lower confidence interval bound projects a mostly level to upward trend as opposed to a dowward forecast.
 
 ``` {r}
 ts1.fcast <- forecast.Arima(ts1.fit1, h=24)
