@@ -1,0 +1,140 @@
+---
+title: "W271 - Applied Regression and Time Series Analysis - HW8"
+author: "Subhashini R., Lei Yang, Ron Cordell"
+date: "April 7, 2016"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+###Build an univariate linear time series model (i.e AR, MA, and ARMA models) using the series in hw08_series.csv.
+**Use all the techniques that have been taught so far to build the model, including date examination, data visualization, etc.**
+**All the steps to support your final model need to be shown clearly.**
+**Show that the assumptions underlying the model are valid.**
+**Which model seems most reasonable in terms of satisfying the model’s underling assumption?**
+**Evaluate the model performance (both in- and out-of-sample)**
+**Pick your “best” models and conduct a 12-step ahead forecast. Discuss your results. Discuss the choice of your metrics to measure “best”.**
+
+
+
+```{r}
+library(forecast)
+# load data
+setwd("~/Desktop/W271Data")
+x1 <- read.csv('hw08_series.csv', header = T)
+```
+
+
+Let's evaluate some plots
+```{r}
+par(mfrow=c(2,2))
+plot(x1$x, ylab="value", main="hw08_series")
+hist(x1$x, col="grey", ylab="value", main="hw08_series")
+acf(x1$x, ylab="value", main="hw08_series")
+pacf(x1$x, ylab="value", main="hw08_series")
+```
+
+according to the plot of ACF and PACF, it is intriguing to build a AR(1) model.
+
+```{r}
+ar1.fit <- arima(x1$x, order=c(1,0,0))
+  ar1.fit
+  summary(ar1.fit)
+```
+
+from the coefficient, it's almost a random walk.
+
+Let's check residue for the stationality assumption
+
+```{r}
+par(mfrow=c(2,2))
+plot(ar1.fit$residuals, ylab="value", main="Residuals")
+hist(ar1.fit$residuals, col="grey", ylab="value", main="Residuals")
+acf(ar1.fit$residuals, ylab="value", main="Residuals")
+pacf(ar1.fit$residuals, ylab="value", main="Residuals")
+```
+
+obviously it's not random noise, as the magnitude is increasing in the second half. Although the Box test indicate non-significant results:
+```{r}
+Box.test(ar1.fit$residuals, type="Ljung-Box")
+```
+
+Let's increase the AR order:
+
+```{r}
+ar.fit <- ar(x1$x, method="mle") 
+  ar.fit
+  summary(ar.fit)
+```
+
+Let's check residue for the stationality assumption for the new AR model
+
+```{r}
+par(mfrow=c(2,2))
+plot(ar.fit$resid, ylab="value", main="Residuals")
+hist(ar.fit$resid, col="grey", ylab="value", main="Residuals")
+acf(ar.fit$resid, ylab="value", main="Residuals", na.action=na.pass)
+pacf(ar.fit$resid, ylab="value", main="Residuals", na.action=na.pass)
+```
+
+from the plot, it's still not quite random, and the Box test indicates significant results as well. 
+
+Let's check MA model:
+```{r}
+ma2.fit <- arima(x1$x, order=c(0,0,2))
+ma4.fit <- arima(x1$x, order=c(0,0,4))
+ma6.fit <- arima(x1$x, order=c(0,0,6))
+ma8.fit <- arima(x1$x, order=c(0,0,8))
+```
+
+and check the residuals:
+
+```{r}
+par(mfrow=c(2,2))
+plot(ma2.fit$resid, ylab="value", main="MA(2) Residuals")
+plot(ma2.fit$resid, ylab="value", main="MA(4) Residuals")
+plot(ma2.fit$resid, ylab="value", main="MA(6) Residuals")
+plot(ma2.fit$resid, ylab="value", main="MA(8) Residuals")
+```
+
+obviously MA model is not adquate for the series.
+
+Let's turn to ARMA model, and it turns out we are not able to fit ARMA model as the series is not stationary, obviously.
+
+```{r}
+#arma11 <- arima(x1$x, order=c(1,0,1))
+#arma21 <- arima(x1$x, order=c(2,0,1))
+#arma22 <- arima(x1$x, order=c(2,0,2))
+#arma23 <- arima(x1$x, order=c(2,0,3))
+#arma33 <- arima(x1$x, order=c(3,0,3))
+```
+
+Based on the principle of parsimonious, we will use AR(1) as the model, since both the series and the residuals are non-stationary.
+
+```{r}
+par(mfrow=c(1,1))
+  plot(x1$x, col="red", 
+       main="Original vs Estimated Series (AR1)",
+       ylab="Values", lty=2)
+  lines(fitted(ar1.fit),col="blue")
+  leg.txt <- c("Original Series", "Estimated Series")
+  legend("topright", legend=leg.txt, lty=c(2,1), 
+         col=c("red","blue"), bty='n', cex=1)
+```
+
+in-sample prediction fits the original data pretty well.
+
+12-step prediction:
+```{r}
+ar1.fit.fcast <- forecast.Arima(ar1.fit, 12)
+  summary(ar1.fit.fcast)
+
+  plot(ar1.fit.fcast, main="12-Step Ahead Forecast and Original & Estimated Series",
+      xlab="Simulated Time Period", ylab="Original, Estimated, and Forecasted Values",
+      xlim=c(), lty=2, col="navy")
+  lines(fitted(ar1.fit),col="blue")  
+```
