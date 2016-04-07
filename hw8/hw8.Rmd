@@ -66,3 +66,24 @@ ts1.fit
 summary(ts1.fit)
 ```
 
+The coefficients of the ARMA(2,1) model are all statistically significant.
+
+Checking the residuals...
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1.fit$residuals)
+plot.ts(ts1.fit$residuals)
+acf(ts1.fit$residuals)
+pacf(ts1.fit$residuals)
+```
+
+These residuals show a definite trend in that they become more volatile and larger over time. The distribution is slightly skewed. The autocorrelation shows correlations at lags 12 and 24 while the partial autocorrelation shows statistically significant effects at lag 2, 9-14 and 24.
+
+```{r}
+plot.ts(ts1)
+plot.ts(ts1.fit$series)
+plot.ts(ts1.fit$residuals)
+
+```
+
