@@ -207,6 +207,41 @@ axis(side=4, col='green')
 
 ```
 
+We will re-estimate the model by omitting the final 12 time periods and then compare the forecast to the actual values to measure the out-of-sample fit of the model.
+
+```{r}
+# fit all but the last 12 periods of the time series
+ts1.fit_short <- Arima(ts1[1:360], order=c(2,0,1), seasonal = c(0,1,1))
+ts1.fit_short
+summary(ts1.fit_short)
+ts1.fcast_short <- forecast.Arima(ts1.fit_short, h=12)
+ts1.fcast_short
+summary(ts1.fcast_short$mean)
+```
+
+```{r}
+par(mfrow=c(1,1))
+plot(ts1.fcast_short,
+     main='12-Step Ahead Forecast, Original Series and Esitmated Series',
+     xlab='', ylab='',
+     ylim=c(30,160), lty=1, col='blue')
+par(new=T)
+plot.ts(ts1, main="Time Series  ARMA(2,2) Forcast Model and Residuals",
+        ylab="Actual and Estimated Values", xlab="Period",
+        col="navy", ylim=c(30,160),  lty=2)
+leg.txt <- c("Original Series", "Estimate Series", "Residuals")
+legend("topleft",legend=leg.txt,lty=c(1,1,2),
+      col=c("navy","blue","green"),
+      bty='n', cex=1)
+par(new=T)
+plot.ts(ts1.fit_short$residuals, axes=F,xlab='',ylab='',col="green",
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50))
+axis(side=4,col='green')
+mtext("Residuals",side=4,line=2, col='green')
+```
+
+
+
 The forecast model is projected out 24 time periods and indicates the continued upward trend and seasonality. The confidence interval plots around the mean forecast show a similar behavior, although it's noteable that the lower confidence interval bound projects a mostly level to upward trend as opposed to a dowward forecast.
 
 ``` {r}
