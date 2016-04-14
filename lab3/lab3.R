@@ -12,8 +12,8 @@ plot(c(1,2,3),c(1,2,3))
 library(ggplot2)
 library(lmtest)
 library(car)
-
-
+library(MASS)
+library(stargazer)
 
 #########################################################################
 #
@@ -217,6 +217,69 @@ pairs(homeValue ~ crimeRate_pc + nonRetailBusiness + withWater +
 # and NonRetailBusiness shows a moderate correlation with home values.
 #
 # Crime rate shows a moderate correlation with home values
+#
+# Next I want to take a look at the DistanceToHighway variable and filter
+# out the encoding issue. I'm going to look at 2 different approaches - 
+# removing those entries that have the encoding issue which reduces the
+# data set by 25%, and to recompute the 24 mile entries as the mean
+# of the DistanceToHighway with the 24 mile values included.
+#
+# first we create a transformed column that replaces all values of
+# 24 with the mean value of distanceToHighway
+distanceToHighway.mean <- mean(hv_df$distanceToHighway)
+hv_df$distanceToHighwayX <- ifelse(hv_df$distanceToHighway<24,
+                                   hv_df$distanceToHighway,
+                                   distanceToHighway.mean)
+
+# Next we create a subset dataframe that filters out rows where
+# distanceToCity = 24
+hv_df_hiway_filtered <- subset(hv_df, distanceToHighway<24)
+
+# compare the summary statistics of the filtered and raw data set
+stargazer(hv_df_hiway_filtered, type="text")
+stargazer(hv_df, type="text")
+
+# compare the histograms on a single "page"
+par(mfrow=c(2,1))
+hist(hv_df_hiway_filtered$distanceToHighway,
+     main="Histogram of Distance to Highway",
+     xlab="Distance")
+hist(hv_df$distanceToHighwayX,
+     main="Histogram of Distance to Highway",
+     xlab="Distance")
+# It's easy to see that there is a big difference between the filtered
+# data and the raw data and a huge reduction in the size of the data
+# Comparing the histograms shows that replacing the distanceToHighway=24
+# with the mean value still creates a large number of values at one end
+# of the scale, it's just closer to the rest of the data than before
+#
+# Let's see what this does to our pairs grid
+
+# Matrix of histogram, correlations and scatterplots for all the
+# variables in the data set
+par(mfrow=c(1,1))
+pairs(homeValue ~ crimeRate_pc + nonRetailBusiness + withWater + 
+        ageHouse + distanceToCity + distanceToHighwayX +
+        pupilTeacherRatio + pctLowIncome + pollutionIndex + nBedRooms, 
+      data=hv_df, upper.panel=panel.smooth, 
+      lower.panel=panel.cor, diag.panel=panel.hist)
+
+pairs(homeValue ~ crimeRate_pc + nonRetailBusiness + withWater + 
+        ageHouse + distanceToCity + distanceToHighway +
+        pupilTeacherRatio + pctLowIncome + pollutionIndex + nBedRooms, 
+      data=hv_df_hiway_filtered, upper.panel=panel.smooth, 
+      lower.panel=panel.cor, diag.panel=panel.hist)
+
+
+qplot(distanceToHighwayX, homeValue, data=hv_df, geom=c("point", "smooth"))
+qplot(distanceToHighway, homeValue, data=hv_df_hiway_filtered, geom=c("point", "smooth"))
+
+# End note - I don't think any of these transformations on distanceToHighway
+# make much difference. There aren't really any strong correlations that
+# appear as a result. The qPlots between home value and distance to highway indicate
+# that there is a very weak relationship, if at all
+
+# General Analysis of Overall Trends (from the pairs grid)
 
 # There is a strong linear correlation between homeValue and nBedRooms
 qplot(nBedRooms, homeValue, data=hv_df, geom=c("point", "smooth"))
@@ -276,9 +339,26 @@ coeftest(m7)
 vif(m7)
 
 plot(m7)
-
+qqPlot(m7)
 summary(m7)
 
 # from what I see of the plots of these modesl, M6 so far provides
 # the highest Adjusted R^2 value without the additional parameter
-# of crime rate.
+# of crime rate. The qqPlot for M6 shows a better normal quantile plot
+# than for M7 as well.
+
+# non-normality
+qqPlot(m6)
+sresid <- studres(m6) 
+hist(sresid, freq=FALSE, 
+     main="Distribution of Studentized Residuals")
+xfit<-seq(min(sresid),max(sresid),length=40) 
+yfit<-dnorm(xfit) 
+lines(xfit, yfit)
+
+#non-constance error variance
+ncvTest(m6)
+spreadLevelPlot(m6)
+
+# Non-independence of errors
+durbinWatsonTest(m6)
