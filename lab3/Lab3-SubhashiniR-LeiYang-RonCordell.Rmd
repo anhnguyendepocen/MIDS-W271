@@ -2,7 +2,10 @@
 title: "Lab3"
 author: "Subhashini R., Lei Yang, Ron Cordell"
 date: "April 12, 2016"
-output: pdf_document
+output: 
+  pdf_document:
+    includes:
+      in_header: header.tex
 ---
 
 # Lab 3
@@ -14,13 +17,37 @@ knitr::read_chunk('lab3-part1.R')
 
 ## Part 1 - Modeling House Values
 
-```{r part1setup, echo=FALSE,warning=FALSE, message=FALSE, results='hide'}
+```{r part1setup, echo=FALSE,warning=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
-```{r summary, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r summary_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+\newpage
+```{r data_transformations, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
 
-```{r dataexplore, echo=FALSE, message=FALSE, warning=FALSE}
+```{r histogram_of_crimerate, echo=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
 ```
-
-```{r variables1, echo=FALSE}
+\newpage
+```{r histogram_of_nonbizretail_agehouse, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
 ```
+\newpage
+```{r histogram_of_distcity, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```
+\newpage
+```{r histogram_of_disthiway_pupils, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```
+\newpage
+```{r histogram_of_lowincome, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```
+\newpage
+```{r histogram_of_homevalue, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```
+\newpage
+```{r histogram_of_pollution_nbeds, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```
+\newpage
+\blandscape
+```{r matrixplot_variables, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9.5, fig.height=7.0}
+```
+\elandscape
+\newpage

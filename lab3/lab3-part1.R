@@ -10,6 +10,7 @@ library(lmtest)
 library(car)
 library(MASS)
 library(stargazer)
+library(sfsmisc)
 library(psych)
 library(e1071)
 
@@ -79,10 +80,11 @@ head(hv_df,10)
 
 tail(hv_df,10)
 
-## ---- summary ----
-#describe(hv_df)
+## ---- summary_latex ----
 stargazer(hv_df, type = "latex", header=FALSE)
 
+## ---- summary_text ----
+stargazer(hv_df, type = "text", header=FALSE)
 
 # Notes about each of the variables from the summary
 # crimerate_pc - from almost 0 to 90 per 1000 residents, mean of 3.76
@@ -107,7 +109,7 @@ stargazer(hv_df, type = "latex", header=FALSE)
 #           mean of 40.61 and a max of 72.10.
 # nBedRooms - mean of 4.2 (higher than I would've thought)
 
-## ---- dataexplore ----
+## ---- data_transformations ----
 sum(hv_df$distanceToHighway==24)
 
 # There are 104 out of 400 observations that are 24.
@@ -131,84 +133,99 @@ hv_df$crimeRate_pc_log <- log(hv_df$crimeRate_pc)
 hv_df$distanceToCity_log <- log(hv_df$distanceToCity)
 hv_df$pctLowIncome_log <- log(hv_df$pctLowIncome)
 hv_df$ageHouse_log <- log(hv_df$ageHouse)
-
+hv_df$homeValue_log <- log(hv_df$homeValue)
 
 # attempt to get some of the fine structure at the very beginning of the 
 # distribution for crimeRate_pc. The distribution is highly right skewed
-## ---- variables ----
+## ---- histogram_of_crimerate ----
 par(mfrow=c(2,1))
-hist(hv_df$crimeRate_pc, breaks=800, main="Histogram of Crime Rate per Capita",
-     xlab="Crimes per 1000", xlim=c(0,5))
-hist(hv_df$crimeRate_pc_log, breaks=50, main="Histogram of Log Crime Rate per Capita",
-     xlab="Log(Crimes per 1000)")
+histBxp(hv_df$crimeRate_pc, breaks=800, main="Histogram of Crime Rate per Capita",
+     xlab="Crimes per 1000", xlim=c(0,5), width=0.01,
+     boxcol='lightblue')
+histBxp(hv_df$crimeRate_pc_log, breaks=50, main="Histogram of Log Crime Rate per Capita",
+     xlab="Log(Crimes per 1000)", width=0.01,
+     boxcol='lightblue')
 
+## ---- histogram_of_nonbizretail_agehouse ----
 # The distribution of non-retail business acres appears uniform with
 # a very large spike at 0.18
-par(mfrow=c(1,1))
-hist(hv_df$nonRetailBusiness, breaks=50, 
+par(mfrow=c(2,1))
+histBxp(hv_df$nonRetailBusiness, breaks=50, 
      main="Frequency of Non-retail Business Acres",
-     xlab="Business Acres")
-
-# This is a binary variable so a histogram doesn't really help here.
-hist(hv_df$withWater, breaks=50, 
-     main="Histogram of Houses Within 5 Miles of a Body of Water",
-     xlab="Proportion of Houses within 5 Miles of a Body of Water")
+     xlab="Business Acres", 
+     width=0.01, boxcol="lightblue")
 
 # The Proportion of Houses build before 1950 is extremely right-skewed
 # with an almost uniform left tail
-hist(hv_df$ageHouse, breaks=50,
+histBxp(hv_df$ageHouse, breaks=50,
      main="Histogram of Proportion of Houses Built Before 1950",
-     xlab="Proportion of Houses Built Before 1950")
+     xlab="Proportion of Houses Built Before 1950",
+     width=0.01, boxcol="lightblue")
 
+## ---- histogram_of_distcity ----
 # Distance to City distribution is highly right skewed with a long
 # tail to the higher distance-to-city values.
 par(mfrow=c(2,1))
-hist(hv_df$distanceToCity, breaks=50,
-     main="Histogram of Distance to City", xlab="Distance To City")
-hist(hv_df$distanceToCity_log, breaks=50,
-     main="Histogram of Log(Distance to City)", xlab="Log(Distance To City)")
+histBxp(hv_df$distanceToCity, breaks=50,
+     main="Histogram of Distance to City",
+     xlab="Distance To City",
+     width=0.01, boxcol="lightblue")
+histBxp(hv_df$distanceToCity_log, breaks=50,
+     main="Histogram of Log(Distance to City)",
+     xlab="Log(Distance To City)",
+     width=0.01, boxcol="lightblue")
 
+## ---- histogram_of_disthiway_pupils ----
 # The distance to highway appears to have a coding error with many of
 # the distances set to 24. Otherwise the distribution appears normal-like
-par(mfrow=c(1,1))
-hist(hv_df$distanceToHighway, breaks=50,
-     main="Distance To Highway", xlab="Distance to Highway")
+par(mfrow=c(2,1))
+histBxp(hv_df$distanceToHighway, breaks=50,
+     main="Distance To Highway", 
+     xlab="Distance to Highway", 
+     width=0.01, boxcol="lightblue")
 
 # The distribution is more or less uniform except for one large peak
 # at just over 23 pupils per teacher.
-hist(hv_df$pupilTeacherRatio, breaks=50,
+histBxp(hv_df$pupilTeacherRatio, breaks=50,
      main="Frequency of Pupil to Teacher Ratio",
-     xlab="Pupils per Teacher")
+     xlab="Pupils per Teacher", 
+     width=0.01, boxcol="lightblue")
 
+## ---- histogram_of_lowincome ----
 # Low income housing distribution appears as a skewed-right normal-like
 # distribution with a long tail towards the higher percentage of low
 # income houses.
 par(mfrow=c(2,1))
-hist(hv_df$pctLowIncome, breaks=50, 
+histBxp(hv_df$pctLowIncome, breaks=50, 
      main="Frequency of Low Income Housing",
-     xlab="Percentage of Low Income Houses")
-hist(hv_df$pctLowIncome_log, breaks=50, 
+     xlab="Percentage of Low Income Houses", 
+     width=0.01, boxcol="lightblue")
+histBxp(hv_df$pctLowIncome_log, breaks=50, 
      main="Frequency of Log(% Low Income Housing)",
-     xlab="Log(Percentage) of Low Income Houses")
+     xlab="Log(Percentage) of Low Income Houses", 
+     width=0.01, boxcol="lightblue")
 
+## ---- histogram_of_homevalue ----
 # Home value distribution appears normal-like with a longer taper
 # to the higher value homes
-par(mfrow=c(1,1))
-hist(hv_df$homeValue, breaks=50,
+par(mfrow=c(2,1))
+histBxp(hv_df$homeValue, breaks=50,
      main="Histogram of Home Values per Neighborhood",
-     xlab="Home Value")
+     xlab="Home Value", width=0.01, boxcol="lightblue")
+histBxp(hv_df$homeValue_log, breaks=50,
+     main="Histogram of Log(Home Values) per Neighborhood",
+     xlab="Log(Home Value)", 
+     width=0.01, boxcol="lightblue")
 
+## ---- histogram_of_pollution_nbeds ----
 # The pollution index distribution seems almost random
-hist(hv_df$pollutionIndex, breaks=50,
+par(mfrow=c(2,1))
+histBxp(hv_df$pollutionIndex, breaks=50,
      main="Distribution of Pollution Index Across Neighborhoods",
-     xlab="Pollution Index")
+     xlab="Pollution Index", 
+     width=0.01, boxcol="lightblue")
 
-# The bedroom counts appear to be normal-like in distribution
-# and mostly un-skewed in any direction
-hist(hv_df$nBedRooms, breaks=50,
-     main="Frequency of Bedroom Counts per Neighborhood",
-     xlab="Bedroom Count")
-
+## ---- matrixplot_variables ----
 # The next two functions are used to calculate the correlation
 # and histograms used in the pair graph further down
 panel.hist <- function(x, ...)
@@ -239,8 +256,10 @@ pairs(homeValue ~ crimeRate_pc_log + nonRetailBusiness + withWater +
       ageHouse + distanceToCity_log + distanceToHighway +
       pupilTeacherRatio + pctLowIncome_log + pollutionIndex + nBedRooms, 
       data=hv_df, upper.panel=panel.smooth, 
-      lower.panel=panel.cor, diag.panel=panel.hist)
+      lower.panel=panel.cor, diag.panel=panel.hist,
+      main="Data Set Variable Scatterplot Matrix")
 
+## ---- disthiway_detail ----
 # The pairs grid shows strong correlations between pollution index
 # and nonRetailBusiness, house age, distance to the city and moderate
 # correlation with distanceToHighway and percent Low income housing.
