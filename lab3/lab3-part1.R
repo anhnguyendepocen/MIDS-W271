@@ -1,14 +1,10 @@
-## @knitr part1
-plot(c(1,2,3),c(1,2,3))
-
-## @knitr part2
-plot(c(1,2,3),c(1,2,3))
 
 #########################################################################
 #
 # Lab 3, Setup
 #
 #########################################################################
+## ---- part1setup ----
 library(ggplot2)
 library(lmtest)
 library(car)
@@ -83,7 +79,9 @@ head(hv_df,10)
 
 tail(hv_df,10)
 
-describe(hv_df)
+## ---- summary ----
+#describe(hv_df)
+stargazer(hv_df, type = "latex", header=FALSE)
 
 
 # Notes about each of the variables from the summary
@@ -109,6 +107,7 @@ describe(hv_df)
 #           mean of 40.61 and a max of 72.10.
 # nBedRooms - mean of 4.2 (higher than I would've thought)
 
+## ---- dataexplore ----
 sum(hv_df$distanceToHighway==24)
 
 # There are 104 out of 400 observations that are 24.
@@ -136,6 +135,7 @@ hv_df$ageHouse_log <- log(hv_df$ageHouse)
 
 # attempt to get some of the fine structure at the very beginning of the 
 # distribution for crimeRate_pc. The distribution is highly right skewed
+## ---- variables ----
 par(mfrow=c(2,1))
 hist(hv_df$crimeRate_pc, breaks=800, main="Histogram of Crime Rate per Capita",
      xlab="Crimes per 1000", xlim=c(0,5))

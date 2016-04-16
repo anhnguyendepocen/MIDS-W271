@@ -9,19 +9,18 @@ output: pdf_document
 
 ```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
-knitr::read_chunk('lab3.R')
+knitr::read_chunk('lab3-part1.R')
 ```
 
-## Section 1
+## Part 1 - Modeling House Values
 
-This is a test of pulling in external R script.
-
-```{r part1, echo=FALSE}
+```{r part1setup, echo=FALSE,warning=FALSE, message=FALSE, results='hide'}
+```
+```{r summary, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 ```
 
-## Section 2
+```{r dataexplore, echo=FALSE, message=FALSE, warning=FALSE}
+```
 
-This is the last section
-
-```{r part2, echo=FALSE}
+```{r variables1, echo=FALSE}
 ```
