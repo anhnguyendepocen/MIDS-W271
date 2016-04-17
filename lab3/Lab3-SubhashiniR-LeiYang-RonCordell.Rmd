@@ -17,37 +17,206 @@ knitr::read_chunk('lab3-part1.R')
 
 ## Part 1 - Modeling House Values
 
+### Exploratory Data Analysis
+
+An examination of the provided data set reveals 11 variables of which _withWater_ is binary and rest are continuous. There are no NA's in the data set, however the _distanceToHighway_ variable appears to have a coding issue. We'll examine this variable in more detail a bit later, but first we summarize the variables in the following table.
+
 ```{r part1setup, echo=FALSE,warning=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
 ```{r summary_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 ```
+
+For the purposes of this analysis we categorize the variables _crimeRate_pc_, _nonRetailBusiness_, _withWater_, _distanceToCity_, _distanceToHighway_, _pollutionIndex_, _pupilTeacherRation_ and _pctLowHousing_ to be environmental variables. The variables _ageHouse_ and _nBedRooms_ are attributes of the house. The variable _homeValue_ is the dependent variable we would like to explain in terms of primarily the environment variables but we will compare to explanations in terms of house attributes as well.
+
+In the next several pages we examine the distribution of each of the variables and, where indicated, the distribution of the log(variable) as well.
+
 \newpage
 ```{r data_transformations, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
 
-```{r histogram_of_crimerate, echo=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_crimerate, echo=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
+
+The distribution of _crimeRate_pc_ is highly right-skewed with a very long tail. This makes sense as most neighborhoods are very low crime neighborhoods. The distribution of _log(crimeRate_pc)_ appears almost bi-modal; however the analysis of skew and kurtosis show a significant improvement of each with a log transformation.
 \newpage
-```{r histogram_of_nonbizretail_agehouse, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_nonbizretail_agehouse, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
+
+The variable _nonRetailBusiness_ is a measure of the footprint of industy in a neaghborhood. This may range from light industrial to manufacturing but that information is not given. The distribution of _nonRetailBusiness_ shows a spike at 0.18 business-acres but is otherwise somewhat uniform. There was no transform that improved skew or kurtosis for this variable.
+
+The variable _ageHouse_ is the percentage of houses in a neighborhood built before 1950 and shows a significant left-skew with a long tail to the left. However no transformation was found that normalized the skew and kurtosis of this variable.
+
 \newpage
-```{r histogram_of_distcity, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_distcity, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
+
+The _distanceToCity_ variable shows a right-skewed distrubution that is much improved by a log transformation.
 \newpage
-```{r histogram_of_disthiway_pupils, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_disthiway_pupils, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
+
+The _distanceToHighway_ variable shows the concern with coding error in this histogram as there is a large occurance of the value _24_. About 25% of the dataset have this value, some of which may be correct but it seems unlikely that the _distanceToHighway_ variable would be much greater than the _distanceToCity_ variable.
+
+The _pupilTeacherRatio_ variable shows a roughly uniform distribution except for a large number of occurances of the value _23_, which must be a more common classroom size. 
+
 \newpage
-```{r histogram_of_lowincome, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_lowincome, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
+
+The _pctLowIncome_ variable has a right-skewed distribution that tapers off to the right relatively quickly. A log transformation greatly improves the skew and kurtosis of the distribution.
+
 \newpage
-```{r histogram_of_homevalue, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_homevalue, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
+
+The _homeValue_ variable shows a slight right-skew and a log transformation is used to help with this. It also allows discussion in terms of percentage change of home value when controlling for other variables.
+
 \newpage
-```{r histogram_of_pollution_nbeds, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
+```{r histogram_of_pollution, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9}
 ```
+
+The _pollutionIndex_ variable shows a right-skewed distribution upon which we perform a log transform.
+\newpage
+```{r histogram_of_nbeds, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=4.5}
+```
+
+The _nBedRooms_ variable appears amazingly normal-like in its distribution.
+
+The next page brings all the variables into a single matrix for comparison and to get a first look at correlations to explore further.
 \newpage
 \blandscape
 ```{r matrixplot_variables, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9.5, fig.height=7.0}
 ```
 \elandscape
+
+```{r disthiway_detail, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
+#### DistanceToHighway Variable Detailed Examination
+
+We saw previously that the _distanceToHighway_ variable looked suspicious so in this section we look at how to address a possible coding issue. The number of rows in the dataset that have the _distanceToHighway_ variable as 24 is 25% of the dataset. Removing these rows would remove a significant amount of data, reducing _N=400_ to _N=296_. We examine two strategies and compare them to the row-removal option: replacing values of 24 with the mean of the filtered values or with the value of _distanceToCity_. 
+
+The following two tables compare the summaries of the filtered dataset with the summaries of the dataset with transformed values. Comparing the _distanceToHighway_meanMod_ and _distanceToHighway_cityMod_ shows that the latter is much closer to the values of the filtered dataset. This indicates that replacing the value of 24 with the value of _distanceToCity_ is a reasonable transformation to deal with the coding issue. The idea is further substantiated by the proposition that the distance to a city is usually not greater than the distance to a highway as cities are generally located on highways.  
+
+The following page shows a set of comparison histograms for the _distanceToHighway_ variable with the different transformations. A histogram of _distanceToCity_ is included as a reference.  
+
+
+
+```{r histogram_of_disthiway2, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=4.5}
+```
 \newpage
+
+```{r disthiway_comparison_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+
+\newpage
+```{r disthiway_histograms, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=9.0}
+```
+
+\newpage
+\blandscape
+```{r matrixplot_withvariablemods, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9.5, fig.height=7.0}
+```
+\elandscape
+\newpage
+
+### Multivariate Data Analysis
+
+First we will examine the relationships of the environment variables on home values graphically. We can see that there are definitely relationships between most of the environmental variables and home values, as shown on the next two pages of graphs.
+
+```{r multivariate-relationships-env1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=3.25, fig.height=3.75}
+```
+\newpage
+
+```{r multivariate-relationships-env2, echo=FALSE, message=FALSE, warning=FALSE, fig.width=3.25, fig.height=3.75}
+```
+\newpage
+
+These final two graphs show relationships between home attributes and home values.
+
+```{r multivariate-relationships-attr1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=3.25, fig.height=3.75}
+```
+\newpage
+
+### Models Incorporating Environment Variables
+
+Put something here about all the different models that were tried.
+
+Include models with interaction terms
+
+Discuss omitted variables and how they bias the models
+
+What hypotheses can we test?
+
+Choose the best model(s) and explain the parameters for them.
+
+
+```{r modeling, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r model_comparison_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+
+\newpage
+```{r setup2, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
+knitr::read_chunk('lab3-part2.R')
+```
+
+```{r part2_setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
+## Part 2 - Modeling and Forecasting a Real-World Macroeconomic Financial Time Series
+
+### Exploratory Data Analysis
+
+In order to better understand the time series and analyze the possible underlying processes we must first observe and explore the time series. The first set of plots reveals:
+
+* The series is non-stationary; it has a persistent upward trend; 
+* There are shocks at approximately time periods 500, 1200, 1800 and 2200;
+* The autocorrelation shows a very slight decay over the entire correlagram;
+* The partial autocorrelation shows barely significant results at lags 14 and 32;
+* There doesn't appear to be any seasonality in the time series;
+* We do not know the frequency of the time series;
+* The series is of closing prices of DXCM
+
+To remove the trend from the series we take the first difference and replot to check the results. In the differenced series we observe:
+
+* The first difference series has a more or less white noise appearance until approximately time interval 1600 where the volatility of the series increases dramatically. This corresponds to the sudden, persistent upward trend in the original series.
+* The autocorrelation shows marginally significant results at lags 13, 15, 16, 24, 31
+* The partial autocorrelation shows a cyclic behavior that doesn't appear to decline, with significant results at lags 11, 13, 14, 15, 16, 24, 25, 31
+
+We also examine the first difference of the log of the series and replot to check results. In the differenced log series we observe:
+
+* The volatility appears to be reversed such that it is around interval 300-500, and overall the volatility of the differenced log series is higher.
+* The ACF shows only a small results at lag 15 and 20.
+* The PACF shows a cyclic behavior with significant results at lags 9, 15, 20
+
+```{r part2_loaddata, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
+```{r part2_tsplots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
+```
+\newpage
+
+```{r part2_diff_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_diff_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
+```
+\newpage
+```{r part2_difflog_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_difflog_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
+```
+\newpage
+
+```{r setup3, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
+knitr::read_chunk('lab3-part3.R')
+```
+
+## Part 3 - Forecast Web Search Activity for "Global Warming"
+
+\newpage
+
+## Part 4 - Forecast Inflation-Adjusted Gas Price
+

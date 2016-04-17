@@ -8,7 +8,7 @@
 library(ggplot2)
 library(lmtest)
 library(car)
-library(MASS)
+library(sandwich)
 library(stargazer)
 library(sfsmisc)
 library(psych)
@@ -81,10 +81,10 @@ head(hv_df,10)
 tail(hv_df,10)
 
 ## ---- summary_latex ----
-stargazer(hv_df, type = "latex", header=FALSE)
+stargazer(hv_df, type = "latex", header=FALSE, title = "Summary of Data")
 
 ## ---- summary_text ----
-stargazer(hv_df, type = "text", header=FALSE)
+stargazer(hv_df, type = "text", header=FALSE, title="Summary of Data")
 
 # Notes about each of the variables from the summary
 # crimerate_pc - from almost 0 to 90 per 1000 residents, mean of 3.76
@@ -134,6 +134,7 @@ hv_df$distanceToCity_log <- log(hv_df$distanceToCity)
 hv_df$pctLowIncome_log <- log(hv_df$pctLowIncome)
 hv_df$ageHouse_log <- log(hv_df$ageHouse)
 hv_df$homeValue_log <- log(hv_df$homeValue)
+hv_df$pollutionIndex_log <- log(hv_df$pollutionIndex)
 
 # attempt to get some of the fine structure at the very beginning of the 
 # distribution for crimeRate_pc. The distribution is highly right skewed
@@ -155,8 +156,8 @@ histBxp(hv_df$nonRetailBusiness, breaks=50,
      xlab="Business Acres", 
      width=0.01, boxcol="lightblue")
 
-# The Proportion of Houses build before 1950 is extremely right-skewed
-# with an almost uniform left tail
+# The Proportion of Houses built before 1950 is extremely right-skewed
+# with an almost uniform left tail but a transformation doesn't seem to help
 histBxp(hv_df$ageHouse, breaks=50,
      main="Histogram of Proportion of Houses Built Before 1950",
      xlab="Proportion of Houses Built Before 1950",
@@ -217,13 +218,24 @@ histBxp(hv_df$homeValue_log, breaks=50,
      xlab="Log(Home Value)", 
      width=0.01, boxcol="lightblue")
 
-## ---- histogram_of_pollution_nbeds ----
+## ---- histogram_of_pollution ----
 # The pollution index distribution seems almost random
 par(mfrow=c(2,1))
-histBxp(hv_df$pollutionIndex, breaks=50,
+histBxp(hv_df$pollutionIndex, breaks=30,
      main="Distribution of Pollution Index Across Neighborhoods",
      xlab="Pollution Index", 
      width=0.01, boxcol="lightblue")
+histBxp(hv_df$pollutionIndex_log, breaks=30,
+        main="Distribution of Pollution Index Across Neighborhoods",
+        xlab="Pollution Index", 
+        width=0.01, boxcol="lightblue")
+
+## ---- histogram_of_nbeds ----
+# The nBedRooms variable looks mostly normal
+histBxp(hv_df$nBedRooms, breaks=30,
+        main="Distribution of Number of Bedrooms",
+        xlab="Number of Bedrooms", 
+        width=0.01, boxcol="lightblue")
 
 ## ---- matrixplot_variables ----
 # The next two functions are used to calculate the correlation
@@ -252,7 +264,7 @@ panel.cor <- function(x, y, digits=2, prefix = "", cex.cor, ...)
 
 # Matrix of histogram, correlations and scatterplots for all the
 # variables in the data set
-pairs(homeValue ~ crimeRate_pc_log + nonRetailBusiness + withWater + 
+pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness + withWater + 
       ageHouse + distanceToCity_log + distanceToHighway +
       pupilTeacherRatio + pctLowIncome_log + pollutionIndex + nBedRooms, 
       data=hv_df, upper.panel=panel.smooth, 
@@ -284,184 +296,229 @@ pairs(homeValue ~ crimeRate_pc_log + nonRetailBusiness + withWater +
 #
 # first we create a transformed column that replaces all values of
 # 24 with the mean value of distanceToHighway
+
+# First we create a subset dataframe that filters out rows where
+# distanceToCity = 24 and calculate the new mean
+hv_df_hiway_filtered <- subset(hv_df, distanceToHighway<24)
 distanceToHighway.mean <- mean(hv_df$distanceToHighway)
-hv_df$distanceToHighwayX <- ifelse(hv_df$distanceToHighway<24,
+
+# Next we create the new variables based on the transformation
+# of either replacing with the filtered mean or the distanceToCity
+hv_df$distanceToHighway_modMean <- ifelse(hv_df$distanceToHighway<24,
                                    hv_df$distanceToHighway,
                                    distanceToHighway.mean)
 
-# Next we create a subset dataframe that filters out rows where
-# distanceToCity = 24
-hv_df_hiway_filtered <- subset(hv_df, distanceToHighway<24)
+hv_df$distanceToHighway_modCity <- ifelse(hv_df$distanceToHighway<24,
+                                    hv_df$distanceToHighway,
+                                    hv_df$distanceToCity)
 
+## ---- disthiway_comparison_text ----
 # compare the summary statistics of the filtered and raw data set
 stargazer(hv_df_hiway_filtered, type="text")
 stargazer(hv_df, type="text")
 
+## ---- disthiway_comparison_latex ----
+# compare the summary statistics of the filtered and raw data set
+stargazer(hv_df_hiway_filtered, type="latex", header=FALSE, title='Filtered Dataset')
+stargazer(hv_df, type="latex", header=FALSE, title='Full Dataset')
+
+## ---- histogram_of_disthiway2 ----
+# The distance to highway appears to have a coding error with many of
+# the distances set to 24. Otherwise the distribution appears normal-like
+par(mfrow=c(1,1))
+histBxp(hv_df$distanceToHighway, breaks=50,
+        main="Distance To Highway", 
+        xlab="Distance to Highway", 
+        width=0.01, boxcol="lightblue")
+
+## ---- disthiway_histograms ----
 # compare the histograms on a single "page"
-par(mfrow=c(2,1))
+par(mfrow=c(2,2))
 hist(hv_df_hiway_filtered$distanceToHighway,
-     main="Histogram of Distance to Highway",
+     breaks=20,
+     main="Distance To Highway - Filtered",
      xlab="Distance")
-hist(hv_df$distanceToHighwayX,
-     main="Histogram of Distance to Highway",
+hist(hv_df$distanceToHighway_modMean,
+     breaks=20,
+     main="Distance To Highway - Mean Xform",
      xlab="Distance")
+hist(hv_df$distanceToHighway_modCity,
+     breaks=20,
+     main="Distance To Highway - City Xform",
+     xlab="Distance")
+hist(hv_df$distanceToCity,
+     breaks=20,
+     main="Histogram of Distance to City",
+     xlab="Distance")
+
 # It's easy to see that there is a big difference between the filtered
 # data and the raw data and a huge reduction in the size of the data
 # Comparing the histograms shows that replacing the distanceToHighway=24
 # with the mean value still creates a large number of values at one end
 # of the scale, it's just closer to the rest of the data than before
-#
-# What if we replace the values of 24 with the mean of the filtered set
-distanceToHighwayFiltered.mean <- mean(hv_df_hiway_filtered$distanceToHighway)
-hv_df$distanceToHighwayXX <- ifelse(hv_df$distanceToHighway<24,
-                                   hv_df$distanceToHighway,
-                                   distanceToHighwayFiltered.mean)
-# compare the histograms on a single "page"
-par(mfrow=c(2,1))
-hist(hv_df_hiway_filtered$distanceToHighway,
-     main="Histogram of Distance to Highway",
-     xlab="Distance")
-hist(hv_df$distanceToHighwayXX,
-     main="Histogram of Distance to Highway",
-     xlab="Distance")
-
+# However, replacing the values of 24 with the distanceToCity value
+# produces a distribution that's very close to that of the filtered
+# distribution and appears to be a good candiate transformation to deal
+# with this coding issue
 
 # Let's see what this does to our pairs grid
 
+## ---- matrixplot_withvariablemods ----
 # Matrix of histogram, correlations and scatterplots for all the
 # variables in the data set
 par(mfrow=c(1,1))
-pairs(homeValue ~ crimeRate_pc_log + nonRetailBusiness + withWater + 
-        ageHouse + distanceToCity_log + distanceToHighwayXX +
+pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness +  
+        ageHouse + distanceToCity_log + distanceToHighway_modCity +
         pupilTeacherRatio + pctLowIncome_log + pollutionIndex + nBedRooms, 
       data=hv_df, upper.panel=panel.smooth, 
-      lower.panel=panel.cor, diag.panel=panel.hist)
+      lower.panel=panel.cor, diag.panel=panel.hist,
+      main="Scatterplot Matrix of Transformed Variables")
 
-pairs(homeValue ~ crimeRate_pc + nonRetailBusiness + withWater + 
-        ageHouse + distanceToCity + distanceToHighway +
-        pupilTeacherRatio + pctLowIncome + pollutionIndex + nBedRooms, 
-      data=hv_df_hiway_filtered, upper.panel=panel.smooth, 
-      lower.panel=panel.cor, diag.panel=panel.hist)
-
-
-qplot(distanceToHighwayX, homeValue, data=hv_df, geom=c("point", "smooth"))
-qplot(distanceToHighway, homeValue, data=hv_df_hiway_filtered, geom=c("point", "smooth"))
-qplot(distanceToHighwayXX, homeValue, data=hv_df, geom=c("point", "smooth"))
-
-# End note - I don't think any of these transformations on distanceToHighway
-# make much difference. There aren't really any strong correlations that
-# appear as a result. The qPlots between home value and distance to highway indicate
-# that there is a very weak relationship, if at all
-
+## ---- multivariate-relationships-env1 ----
 # General Analysis of Overall Trends (from the pairs grid)
+# Environment factors first
+par(mfrow=c(2,2))
+# There appears to be a relationships between pollution index and homeValue
+qplot(pollutionIndex, homeValue_log, data=hv_df, 
+      geom=c("point", "smooth"), main='',
+      xlab='Pollution Index', ylab='log(Home Value)')
 
-# There is a strong linear correlation between homeValue and nBedRooms
-qplot(nBedRooms, homeValue, data=hv_df, 
-      geom=c("point", "smooth"), main='Home Values and Crime Rate',
-      xlab='Log(Crime Rate per Capita)', ylab='Home Value $')
-
-# There doesn't appear to be any real correlation between pollution and
-# home price, at least directly; perhaps through interaction
-qplot(pollutionIndex, homeValue, data=hv_df, 
-      geom=c("point", "smooth"), main='Home Values and Pollution Index',
-      xlab='Pollution Index', ylab='Home Value $')
+qplot(nonRetailBusiness, homeValue_log, data=hv_df,
+      geom=c("point", "smooth"), main='',
+      xlab='Non-Retail Business-Acres', ylab='log(Home Value)')
 
 # There seems to be a linear relationship between the log(%) of
 # low income housing and the change in home values
-qplot(pctLowIncome_log, homeValue, data=hv_df,
-      geom=c("point", "smooth"), main='Home Values and Low Income Housing',
-      xlab='Log(% Low Income Housing)', ylab='Home Value $')
-qplot(pctLowIncome, homeValue, data=hv_df,
-      geom=c("point","smooth"), main='Home Values and Low Income Housing',
-      xlab='% Low Income Housing', ylab='Home Value $')
+qplot(pctLowIncome_log, homeValue_log, data=hv_df,
+      geom=c("point", "smooth"), main='',
+      xlab='Log(% Low Income Housing)', ylab='log(Home Value)')
 
-# doesn't seem to be much here with pupil:teacher ratio
-qplot(pupilTeacherRatio, homeValue, data=hv_df, 
-      geom=c("point", "smooth"), main='Home Values and Pupil:Teacher Ratio',
-      xlab='Pupil:Teacher Ratio', ylab='Home Value $')
+# maybe a  correlation in log(crime rate)?
+qplot(crimeRate_pc_log, homeValue_log, data=hv_df,
+      geom=c("point", "smooth"), main='',
+      xlab='Log(Crime Rate per Capita)', ylab='log(Home Value)')
 
-# maybe a smallish correlation in log(crime rate)?
-qplot(crimeRate_pc_log, homeValue, data=hv_df,
-      geom=c("point", "smooth"), main='Home Values and Log(Crime Rate)',
-      xlab='Log(Crime Rate per Capita)', ylab='Home Value $')
-qplot(crimeRate_pc, homeValue, data=hv_df,
-      geom=c("point", "smooth"), main='Home Values and Crime Rate',
-      xlab='Crime Rate per Capita', ylab='Home Value $')
+## ---- multivariate-relationships-env2 ----
+par(mfrow=c(2,1))
+# not sure what to make of the relationship of distanceToCity - starts out
+# as a solid trend but then levels off. Possible explanation is that since
+# this is a log trend it has a diminishing effect that levels off.
+qplot(distanceToCity_log, homeValue_log, data=hv_df,
+      geom=c("point", "smooth"), main='',
+      xlab='Log(DistanceToCity)', ylab='log(Home Value)')
+
+qplot(distanceToHighway_modCity, homeValue_log, data=hv_df,
+      geom=c("point", "smooth"), main='',
+      xlab='Log(DistanceToHighway)', ylab='log(Home Value)')
+
+# There seems to be a linear relationship between pupilTeachRation and homeValue
+qplot(pupilTeacherRatio, homeValue_log, data=hv_df, 
+      geom=c("point", "smooth"), main='',
+      xlab='Pupil:Teacher Ratio', ylab='log(Home Value)')
+
+## ---- multivariate-relationships-attr1 ----
+par(mfrow=c(2,1))
+# Home Attribute Values
+# There is a strong linear correlation between homeValue and nBedRooms
+qplot(nBedRooms, homeValue_log, data=hv_df, 
+      geom=c("point", "smooth"), main='',
+      xlab='Number Bedrooms', ylab='log(Home Value)')
+
+qplot(ageHouse, homeValue_log, data=hv_df,
+       geom=c("point", "smooth"), main='',
+       xlab='Log(% Homes Built Before 1950)', ylab='log(Home Value)')
+
 
 #### MODELING ####
 
-m1 <- lm(homeValue ~ nBedRooms, data=hv_df)
-coeftest(m1)
+## ---- modeling ----
+model1 <- lm(homeValue_log ~ pctLowIncome_log, data=hv_df)
+coeftest(model1, vcov=vcovHC)
+summary(model1)
 
-m2 <- lm(homeValue ~ nBedRooms + pctLowIncome_log, data=hv_df)
-coeftest(m2)
-vif(m2)
+model2 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log, data=hv_df)
+coeftest(model2, vcov=vcovHC)
+summary(model2)
+vif(model2)
 
-m3 <- lm(homeValue ~ nBedRooms + pctLowIncome_log + 
-           nonRetailBusiness, data=hv_df)
-coeftest(m3)
-vif(m3)
+# low income housing is somewhat correlated with crime rate but
+# the vif(model2) shows that we're 'in bounds'
 
-m4 <- lm(homeValue ~ nBedRooms + pctLowIncome_log + 
-           pollutionIndex, data=hv_df)
-coeftest(m4)
-vif(m4)
+model3 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+               pollutionIndex, data=hv_df)
+coeftest(model3, vcov=vcovHC)
+summary(model3)
 
-# Model 5 seems to have the optimal F-statistic, R-squared
-# and the least number of parameters
-m5 <- lm(homeValue ~ nBedRooms + pctLowIncome_log +
-           pupilTeacherRatio, data=hv_df)
-coeftest(m5)
-vif(m5)
+# indicates that pollution index doesn't explain any variation in the model
+# when lowIncomeHousing and crimeRate are controlled for.
 
-# the crimeRate_pc is slightly better than crimeRate_pc_log
-m6 <- lm(homeValue ~ nBedRooms + pctLowIncome_log +
-           pupilTeacherRatio + crimeRate_pc,
-         data=hv_df)
-coeftest(m6)
-vif(m6)
+model4 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+               nonRetailBusiness, data=hv_df)
+coeftest(model4, vcov=vcovHC)
+summary(model4)
 
-m7 <- lm(homeValue ~ nBedRooms + pctLowIncome_log +
-           pupilTeacherRatio + log(distanceToCity),
-         data=hv_df)
-coeftest(m7)
-vif(m7)
+# indicates that nonRetailBusiness doesn't explain any variation in the model
+# when lowIncomeHousing and crimeRate are controlled for.
 
-plot(m5)
-summary(m5)
+model5 <- lm(homeValue_log ~ pollutionIndex + nonRetailBusiness, data=hv_df)
+coeftest(model5, vcov=vcovHC)
+vif(model5)
 
-# from what I see of the plots of these modesl, M6 so far provides
-# the highest Adjusted R^2 value without the additional parameter
-# of crime rate. The qqPlot for M6 shows a better normal quantile plot
-# than for M7 as well.
+# these coefficients don't pass the VIF test and add too much bias because of
+# their collinearity. 
 
-# non-normality
-qqPlot(m5)
-sresid <- studres(m5) 
-hist(sresid, freq=FALSE, breaks=50,
-     main="Distribution of Studentized Residuals")
-xfit<-seq(min(sresid),max(sresid),length=40) 
-yfit<-dnorm(xfit) 
-lines(xfit, yfit)
+model6 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+               withWater, data=hv_df)
+coeftest(model6, vcov=vcovHC)
+vif(model6)
+summary(model6)
 
-#non-constance error variance
-ncvTest(m5)   # null hypothesis of constant error variance can't be rejected
-spreadLevelPlot(m5)
+model7 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+               distanceToCity_log, data=hv_df)
+coeftest(model7, vcov=vcovHC)
+vif(model7)
 
-# Non-independence of errors
-durbinWatsonTest(m5)  # reject null hypotheses of autocorrelation
+# crime rate and distanceToCity add too much collinearity
 
-# models with environmental factors
-m10 <- lm(homeValue ~ pollutionIndex, data=hv_df)
-summary(m10)
-# by itself, the pollution index shows a correlation with home values
+model8 <- lm(homeValue_log ~ pctLowIncome_log + distanceToCity_log,
+             data=hv_df)
+coeftest(model8, vcov=vcovHC)
 
-# a very weak correlation with water 
-m11 <- lm(homeValue ~ withWater, data=hv_df)
-summary(m11)
+# distanceToCity isn't a good replacement for crimeRate
 
-m12 <- lm(homeValue ~ nBedRooms*ageHouse, data=hv_df)
-summary(m12)
+model9 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+               distanceToHighway_modCity, data=hv_df)
+coeftest(model9, vcov=vcovHC)
+vif(model9)
+summary(model9)
 
-m13 <- lm(homeValue ~ distanceToCity*withWater, data=hv_df)
-summary(m13)
+model10 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+                distanceToHighway_modCity + withWater, data=hv_df)
+coeftest(model10, vcov=vcovHC)
+vif(model10)
+summary(model10)
+
+# Use robust standard errors in the table output
+
+
+## ---- model_comparison_text ----
+stargazer(model1, model2, model3, model6, model10,
+          type="text", header=FALSE, df=FALSE,
+          title="Regression Model Comparison",
+          dep.var.labels = c("log(Home Values)"),
+          covariate.labels = c("log(Low Income Housing)",
+                               "log(Crime Rate)",
+                               "Pollution Index",
+                               "Close To Water",
+                               "Distance To Highway"))
+
+## ---- model_comparison_latex ----
+stargazer(model1, model2, model3, model6, model10,
+          type="latex", header=FALSE, df=FALSE,
+          title="Regression Model Comparison",
+          dep.var.labels = c("log(Home Values)"),
+          covariate.labels = c("log(Low Income Housing)",
+                               "log(Crime Rate)",
+                               "Pollution Index",
+                               "Close To Water",
+                               "Distance To Highway"))
