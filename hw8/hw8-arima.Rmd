@@ -1,0 +1,260 @@
+---
+title: "W271 HW8"
+author: "Subhashini R., Lei Yang, Ron Cordell"
+date: "March 29, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Build an univariate linear time series model (i.e AR, MA, and ARMA models) using the series in hw08_series.csv.  
+
+* Use all the techniques that have been taught so far to build the model, including date examination, data visualization, etc.  
+* All the steps to support your final model need to be shown clearly.  
+* Show that the assumptions underlying the model are valid.  
+* Which model seems most reasonable in terms of satisfying the model’s underling assumption?  
+* Evaluate the model performance (both in- and out-of-sample)  
+* Pick your “best” models and conduct a 12-step ahead forecast. Discuss your results. Discuss the choice
+of your metrics to measure “best”.  
+
+```{r}
+# Load the libraries and tools
+library(astsa)
+library(zoo)
+library(forecast)
+library(stargazer)
+```
+
+```{r}
+# load the CSV file
+df <- read.csv('hw08_series.csv')
+str(df)
+```
+
+The CSV file for the HW8 time series consists of two variables: an X variable that is the time interval and an x value corresponding to the time period. There is no information about the time interval or units of the values. 
+
+A time series object is created from the dataframe for further analysis.
+
+``` {r}
+ts1 <- ts(df$x)
+str(ts1)
+summary(ts1)
+head(ts1)
+tail(ts1)
+```
+\newpage
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1, main='Series Histogram', xlab='x', breaks=20) 
+plot.ts(ts1, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='HW8 Time Series')
+acf(ts1, main='Autocorrelation')
+pacf(ts1, main='Partial Autocorrelation')
+```
+
+The time series plot reveals that the HW8 time series is not stationary with a persistently upward trend. The time series also seems to exhibit some seasonality component. The series appears very much like a random walk with drift. The autocorrelation shows a very long decay over more than 25 lags that corresponds to the trend while the partial autocorrelation shows statistically significant results at lags 13 and 25.
+
+We will re-import the time series now that we know there is a 12 period cycle and indicate this in the time series conversion. Then we replot the time series.
+
+```{r}
+ts1 <- ts(df$x, frequency = 12)
+par(mfrow=c(2,2))
+hist(ts1, main='Series Histogram', xlab='x', breaks=20) 
+plot.ts(ts1, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='HW8 Time Series')
+acf(ts1, main='Autocorrelation')
+pacf(ts1, main='Partial Autocorrelation')
+```
+
+
+We will attempt to remove the trend by taking the first difference and then examine the resulting series.
+
+```{r}
+ts1.diff <- diff(ts1)
+summary(ts1.diff)
+```
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1.diff, main='Histogram of Differenced Series', xlab='x', breaks=20) 
+plot.ts(ts1.diff, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='Differenced Time Series')
+acf(ts1.diff, main='Autocorrelation of Differenced Series')
+pacf(ts1.diff, main='Partial Autocorrelation of Differenced Series')
+```
+
+The resulting difference series shows an increasing seasonality and the autocorrelation and partial autocorrelation also show the seasonality. The seasonality appears to be a cycle of 12 periods with very strong peaks at periods 12 and 24. This may indicate a sales trend where months 12 and 24 are the winter holiday sales - this is just speculation, however.
+
+Let's take a look at the difference in log next.
+
+```{r}
+ts1.diff_log <- diff(log(ts1))
+summary(ts1.diff_log)
+```
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1.diff_log, main='Differenced Log Series Histogram', xlab='x', breaks=20) 
+plot.ts(ts1.diff_log, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='Differenced Log Time Series')
+acf(ts1.diff_log, main='Autocorrelation of Differenced Log Series')
+pacf(ts1.diff_log, main='Partial Autocorrelation of Differenced Log Series')
+```
+
+With the differenced log-transformed series the volatility of the seasonality is much more uniform and the seasonality persists.
+
+We take a second difference of the log-transformed series to see if the volatility is reduced in any way.
+
+```{r}
+ts1.diff2_log <- diff(log(ts1), lag=2)
+summary(ts1.diff2_log)
+```
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1.diff2_log, main='Differenced Log Series Histogram', xlab='x', breaks=20) 
+plot.ts(ts1.diff2_log, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='Differenced Log Time Series')
+acf(ts1.diff2_log, main='Autocorrelation of Differenced Log Series')
+pacf(ts1.diff2_log, main='Partial Autocorrelation of Differenced Log Series')
+```
+
+The series still shows strong seasonality, but the volatility is much more uniform.
+
+Now we will perform a seasonally differenced model on the log-transformed, differenced time series to remove the 12 period seasonality and examine the results.
+
+```{r}
+ts1.diff2_s <- diff(ts1.diff2_log, lag = 12)
+summary(ts1.diff2_s)
+```
+
+```{r fig.height=8,fig.width=6}
+par(mfrow=c(2,2))
+hist(ts1.diff2_s, main='Differenced and Seasonal Differenced Histogram', xlab='x', breaks=20) 
+plot.ts(ts1.diff2_s, col='blue',
+        xlab='Time Interval',
+        ylab='x',
+        main='Differenced and Seasonal Differenced Time Series')
+acf(ts1.diff2_s, main='Autocorrelation of Differenced and Seasonal Differenced Series')
+pacf(ts1.diff2_s, main='Partial Autocorrelation of Differenced and Seasonal Differenced Series')
+```
+
+The seasonally differenced first difference series is beginning to appear stationary. The autocorrelation shows some periodicity remaining, as does the PACF. However the autocorrelation indicates the possibility of a ARMA(1,2) while the seasonally differenced seems to indicate an MA(1).
+
+```{r}
+ts1.fit1 <- Arima(ts1, order=c(1,1,1), seasonal = c(0,1,1))
+ts1.fit2 <- Arima(log(ts1), order=c(1,1,1), seasonal = c(0,1,1))
+ts1.fit3 <- Arima(ts1, order=c(1,1,2), seasonal = c(0,1,1))
+summary(ts1.fit1)
+summary(ts1.fit2)
+summary(ts1.fit3)
+```
+
+The model with the lowest AIC is an ARIMA(1,1,1) (0,1,1)[12] model. Let's do some diagnostics on this model by assessing the residuals.
+
+```{r}
+hist(ts1.fit1$residuals, main="Model Residuals Histogram", breaks=20)
+plot.ts(ts1.fit1$residuals, col='blue',
+          xlab='Period',
+          ylab='Residuals',
+          main='ARIMA Model Residuals')
+acf(ts1.fit1$residuals)
+pacf(ts1.fit1$residuals)
+```
+
+Box-Ljung Test
+
+```{r}
+Box.test(ts1.fit1$residuals, type="Ljung-Box")
+```
+
+The null hypothesis of independence can not be rejected according to the Box-Ljung test.
+
+The summary statistics of the model compared to the original series shows a very close correspondence in the mean, standard deviation and minimum/maximum values.
+
+```{r}
+fit.df <- data.frame(cbind(ts1, fitted(ts1.fit1), ts1.fit1$residuals))
+class(df)
+stargazer(fit.df, type="text",title="Descriptive Statistics", digits=1)
+```
+
+```{r}
+par(mfrow=c(1,1))
+plot.ts(ts1, col='blue', 
+        main='Time Series vs. ARIMA(1,1,1)(0,1,1)[12] Model',
+        ylab='Original and Estimated Values', xlab='Period',
+        pch=1, lty=2)
+par(new=T)
+plot.ts(fitted(ts1.fit1), col='navy', axes=F,
+        xlab='',ylab='', lty=1)
+leg.txt <- 
+par(new=T)
+plot.ts(ts1.fit1$residuals, axes=F, xlab='', ylab='', col='green',
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50))
+axis(side=4, col='green')
+
+```
+
+We will re-estimate the model by omitting the final 12 time periods and then compare the forecast to the actual values to measure the out-of-sample fit of the model.
+
+```{r}
+# fit all but the last 12 periods of the time series
+ts1.fit_short <- Arima(ts1[1:360], order=c(2,0,1), seasonal = c(0,1,1))
+ts1.fit_short
+summary(ts1.fit_short)
+ts1.fcast_short <- forecast.Arima(ts1.fit_short, h=12)
+ts1.fcast_short
+summary(ts1.fcast_short$mean)
+```
+
+```{r}
+par(mfrow=c(1,1))
+plot(ts1.fcast_short,
+     main='12-Step Ahead Forecast, Original Series and Esitmated Series',
+     xlab='', ylab='',
+     ylim=c(30,160), lty=1, col='blue')
+par(new=T)
+plot.ts(ts1, main="Time Series  ARMA(2,2) Forcast Model and Residuals",
+        ylab="Actual and Estimated Values", xlab="Period",
+        col="navy", ylim=c(30,160),  lty=2)
+leg.txt <- c("Original Series", "Estimate Series", "Residuals")
+legend("topleft",legend=leg.txt,lty=c(1,1,2),
+      col=c("navy","blue","green"),
+      bty='n', cex=1)
+par(new=T)
+plot.ts(ts1.fit_short$residuals, axes=F,xlab='',ylab='',col="green",
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50))
+axis(side=4,col='green')
+mtext("Residuals",side=4,line=2, col='green')
+```
+
+
+
+The forecast model is projected out 24 time periods and indicates the continued upward trend and seasonality. The confidence interval plots around the mean forecast show a similar behavior, although it's noteable that the lower confidence interval bound projects a mostly level to upward trend as opposed to a dowward forecast.
+
+``` {r}
+ts1.fcast <- forecast.Arima(ts1.fit1, h=24)
+ts1.fcast
+summary(ts1.fcast$mean)
+```
+
+``` {r}
+par(mfrow=c(1,1))
+plot(ts1.fcast,
+     main='24-Step Ahead Forecast, Original Series and Esitmated Series',
+     xlab='Simulated Time Period',
+     ylab='Predicted Value',
+     ylim=c(30,180), lty=1, col='blue')
+```
