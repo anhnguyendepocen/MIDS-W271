@@ -8,6 +8,8 @@
 library(ggplot2)
 library(astsa)
 library(zoo)
+library(fGarch)
+library(tseries)
 library(forecast)
 library(stargazer)
 
@@ -80,4 +82,122 @@ legend("topleft", legend=leg.txt, lty=c(1,1),
        col=c("navy","green"), bty='n', cex=1)
 axis(side=4, col="green")
 mtext("Dollars", side=4, line=2,col="green")
+
+# I'm going to guess that the only thing we can do with the
+# tool set we have is to do a regression of one variable
+# on the other. So let's look at things that way.
+
+qplot(Price, Production, data=gasOil,
+      geom=c("point", "smooth"),
+      main="Gas Price and Oil Production",
+      xlab="Gas Price US Dollars",
+      ylab="Oil Production, Millions of Barrels/Day")
+
+# Let's look at the changes with respect to each other
+df_diffs <- data.frame(diff(gasOil$Production), diff(gasOil$Price))
+colnames(df_diffs) <- c('prod_diff','price_diff')
+head(df_diffs)
+
+## ---- part4_summarize_diff_data_text -----
+stargazer(df_diffs, type="text", header=FALSE,
+          title="Descriptive Statistics", digits=2)
+
+## ---- part4_summarize_diff_data_latex -----
+stargazer(df_diffs, type="latex", header=FALSE,
+          title="Descriptive Statistics", digits=2)
+
+scaled.diffs <- as.data.frame(scale(df_diffs))
+
+
+## ---- part4_plot_qplot_diff ----
+qplot(price_diff, prod_diff, data=scaled.diffs,
+      geom=c("point", "smooth"),
+      main="Normalized Change in Gas Price and Oil Production",
+      xlab="Change in Gas Price",
+      ylab="Change Oil Production")
+
+model1 <- lm(prod_diff ~ price_diff, data=scaled.diffs)
+summary(model1)
+
+model2 <- lm(Production ~ Price, data=gasOil)
+summary(model2)
+
+model3 <- lm(price_diff ~ prod_diff, data=scaled.diffs)
+summary(model3)
+
+model4 <- lm(Price ~ Production, data=gasOil)
+summary(model4)
+
+## ---- part4_summarize_regression_models_text -----
+stargazer(model1, model2, model3, model4, type="text", header=FALSE,
+          covariate.labels = c('Change in Price','Price',
+                               'Change In Production','Production'),
+          dep.var.labels = c('Change in Production', 'Production',
+                             'Change in Price','Price'), digits=5)
+
+## ---- part4_summarize_regression_models_latex -----
+stargazer(model1, model2, type="latex", header=FALSE)
+
+# At this point I'm not sure what else to do. I have no information
+# about what process the AP used to produce their analysis, so I have
+# to assume they were comparing the means of the two variables
+# through regression. There is no meaningful or statistically 
+# significant relationship between the two variables, either differenced
+# or not. 
+#
+# Question: does it make sense to try lagged variables?
+#
+###########################################################################
+#
+# Part 2: Forecast Gas Prices
+#
+###########################################################################
+## ---- part4_plots_ts_price ----
+par(mfrow=c(2,2))
+plot.ts(ts_price, main="Gas Price Time Series", 
+        ylab="Value", xlab="Year")
+hist(ts_price, main="Histogram of Gas Price Series",
+     xlab="Value", breaks=50)
+acf(ts_price, main="Autocorrelation of Gas Price",
+    xlab="Lag",lag.max = 100)
+pacf(ts_price, main="Partial Autocorrelation of Price",
+     xlab="Lag", lag.max = 100)
+
+summary(ts_price)
+
+# Observations:
+# The Gas Price series doesn't seem to have persistent trends but is more
+# like a random walk. The mean is not 0 so we will have to de-mean the series.
+# The ACF indicates an AR() process
+
+## ---- part4_model_price ----
+price.ar <- ar(ts_price, method='mle')
+price.ar$order
+price.arima <- auto.arima(ts_price, max.p=12, max.q=12, max.d=2, max.P=12, max.Q=12, max.D=1, seasonal = T, stationary=T)
+summary(price.arima)
+
+plot.ts(price.arima$residuals, main="ARIMA Residuals", 
+        ylab="Value", xlab="Year")
+
+price.garch <- garchFit(~arma(3,3)+garch(5,1), trace=F)
+summary(price.garch)
+
+price.garch2 <- garch(price.arima$residuals, order=c(0,3), trace=F)
+
+plot.ts(price.garch2$residuals, main="ARMA-GARCH Residuals", 
+        ylab="Value", xlab="Year")
+acf(price.garch2$residuals^2, na.action = na.omit)
+
+# package rugarch
+par(mfrow=c(1,1))
+spec <- ugarchspec(variance.model=list(model='sGARCH', garchOrder=c(1,1), 
+                                       submodel = NULL, external.regressors = NULL, 
+                                       variance.targeting = FALSE),
+                   mean.model = list(armaOrder = c(3, 3)))
+fit <- ugarchfit(spec=spec, data=ts_price)
+show(fit)
+plot(fit)
+
+f <- ugarchforecast(fit, n.ahead=48)
+plot(f)
 
