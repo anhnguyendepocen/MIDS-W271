@@ -169,27 +169,33 @@ knitr::read_chunk('lab3-part2.R')
 
 ### Exploratory Data Analysis
 
-In order to better understand the time series and analyze the possible underlying processes we must first observe and explore the time series. The first set of plots reveals:
+In order to better understand the time series and analyze the possible underlying processes we must first observe and explore the time series. A summary of the time series is:
 
-* The series is non-stationary; it has a persistent upward trend; 
+```{r part2_loaddata, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_summarize_data_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+
+The first set of plots reveals:
+
+* The series is non-stationary; it has a persistent upward trend, interrupted by shocks; 
 * There are shocks at approximately time periods 500, 1200, 1800 and 2200;
+* There appears to be seasonality in the series;
 * The autocorrelation shows a very slight decay over the entire correlagram;
 * The partial autocorrelation shows barely significant results at lags 14 and 32;
-* There doesn't appear to be any seasonality in the time series;
 * We do not know the frequency of the time series;
 * The series is of closing prices of DXCM
+
+Since this is a time series of the closing price of a stock or other NYSE symbol we infer that these are daily closings and that they have a weekly frequency. Therefore to work with seasonality we reform the time series object in R as follows:
+
+```{r part2_timeseries_frequency, echo=TRUE, message=FALSE, warning=FALSE}
+```
 
 To remove the trend from the series we take the first difference and replot to check the results. In the differenced series we observe:
 
 * The first difference series has a more or less white noise appearance until approximately time interval 1600 where the volatility of the series increases dramatically. This corresponds to the sudden, persistent upward trend in the original series.
 * The autocorrelation shows marginally significant results at lags 13, 15, 16, 24, 31
 * The partial autocorrelation shows a cyclic behavior that doesn't appear to decline, with significant results at lags 11, 13, 14, 15, 16, 24, 25, 31
-
-We also examine the first difference of the log of the series and replot to check results. In the differenced log series we observe:
-
-* The volatility appears to be reversed such that it is around interval 300-500, and overall the volatility of the differenced log series is higher.
-* The ACF shows only a small results at lag 15 and 20.
-* The PACF shows a cyclic behavior with significant results at lags 9, 15, 20
 
 ```{r part2_loaddata, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
@@ -203,12 +209,75 @@ We also examine the first difference of the log of the series and replot to chec
 ```{r part2_diff_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
 ```
 \newpage
+
+We also examine the first difference of the log of the series and replot to check results. In the differenced log series we observe:
+
+* The volatility appears to be reversed such that it is around interval 300-500, and overall the volatility of the differenced log series is higher.
+* The ACF shows only a small results at lag 15 and 20.
+* The PACF shows a cyclic behavior with significant results at lags 9, 15, 20
+
+We choose to use the diffenced log-series since this is a financial time series and we can discuss returns in terms of percentage-changes to the closing price.
+
 ```{r part2_difflog_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
-```{r part2_difflog_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
+```{r part2_difflog_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
 ```
 \newpage
 
+The seasonality of the series is not strong in the ACF of the differenced series. However, there are hints of a 5 day cycle that corresponds to the weekly frequency. There are stronger spikes that appear in lags 15 and 30 that support a multiple or harmonic of 5. We will use a seasonality factor of 365.25/7 in order to deal with the varying number of weeks per year.
+
+The ACF and PACF of the differenced seasonal series show evidence of an underlying AR process
+
+```{r part2_seasonal_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_seasonal_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
+```
+\newpage
+
+```{r part2_multiple_model_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
+### Model Selection
+
+We build a model grid of SARIMA models to from SARIMA(0,1,1)(0,1,0) to SARIMA(2,1,1)(1,1,1) and use the model results to present the parameters in tabular format for comparison. All models use a seasonal value of 365.25/7, or just a bit over 52.
+
+The parameters of the 24 models are split into 3 tables of 8 models; each successive table contains models with more parameters. Comparing the AICc and Log Likelihood values reveals that there are a cluster of models around the AICc value of 8610. The most parsimonious model is the SARIMA(0,1,1)(0,1,0)[52] model but the model is not stationary because the lagged coefficient polynomial root is on the unit circle. In fact, the only models in this grid that do not have roots on the unit circle are the SARIMA(1,1,0)(0,1,0)[52] and SARIMA(1,1,1)(1,1,1)[52] models, with AICc values of -7673 and -8469, respectively. Therefore we choose the SARIMA(1,1,1)(1,1,1)[52] model as the most appropriate. The root plot for this model is shown below; the tables for the model parameters follow on the next two pages.
+
+```{r part2_multi_model_root_plot_12, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
+```
+
+\blandscape
+```{r part2_multiple_model_table1_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+\newpage
+```{r part2_multiple_model_table2_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+\newpage
+```{r part2_multiple_model_table3_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+\elandscape
+\newpage
+### SARIMA (1,1,1)(1,1,1)[52] Model Residual Analysis
+
+The residual plots of the SARIMA(1,1,1)(1,1,1)[52] model show that the residual has a volatility that changes over time. The PACF of the squared residuals show that a ARCH model could be used for the residuals.
+ 
+```{r part2_multi_model_residual_plot_12, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
+```
+\newpage
+
+### ARCH Model Analysis
+
+We analyse potential ARCH models by constructing models of increasing order and plotting the squared residuals. Once the squared residuals have no statistically significant lags we select the result ARCH model order. Using this process we arrive at an ARCH(7)/GARCH(0,7) model.
+
+```{r part2_garch_model12, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_garch_model12_ci, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+```{r part2_garch_model_residual_plot12, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
+```
+
+
+\newpage
 ```{r setup3, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
 knitr::read_chunk('lab3-part3.R')
