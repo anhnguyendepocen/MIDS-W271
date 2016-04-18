@@ -106,9 +106,9 @@ obviously MA model is not adquate for the series.
 Let's turn to ARMA model, and it turns out we are not able to fit ARMA model as the series is not stationary, obviously.
 
 ```{r}
-#arma11 <- arima(x1$x, order=c(1,0,1))
-#arma21 <- arima(x1$x, order=c(2,0,1))
-#arma22 <- arima(x1$x, order=c(2,0,2))
+arma11 <- arima(x1$x, order=c(1,0,1))
+arma21 <- arima(x1$x, order=c(2,0,1))
+arma22 <- arima(x1$x, order=c(2,0,2))
 #arma23 <- arima(x1$x, order=c(2,0,3))
 #arma33 <- arima(x1$x, order=c(3,0,3))
 ```
