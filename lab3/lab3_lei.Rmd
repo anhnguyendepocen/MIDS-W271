@@ -4,6 +4,7 @@ author: ""
 date: "April 17, 2016"
 output: pdf_document
 ---
+
 ## Part 1
 
 Load data and display some basic statistics:
@@ -16,6 +17,7 @@ library(car)
 library(lmtest)
 library(sandwich)
 library(AER)
+library(fGarch)
 library(ivpack)
 library(stargazer)
 # load data
@@ -30,7 +32,7 @@ summary(data)
 
 We first generate the matrix plot to have an overview of all variables. 
 
-![Alt text](/Users/leiyang/Desktop/matrixPlot.jpeg "Matrix Plot")
+![Alt text](matrixPlot.jpeg "Matrix Plot")
 
 Upon first galance, two things stands out: no highly-correlated pair of variables, thus collinearity won't be a concern of our analysis, in addition, the majority of the distributions are skewed and non-normal. More specifically:
 
@@ -56,7 +58,7 @@ we then do some transformation on the variables:
  
 Let's evaluate matrix plot again with the transformed variables:
 
-![Alt text](/Users/leiyang/Desktop/matrixPlot_transformed.jpeg "Matrix Plot")
+![Alt text](matrixPlot_transformed.jpeg "Matrix Plot")
 
 ```{r echo=FALSE}
 panel.hist <- function(x, ...)
@@ -215,3 +217,67 @@ summary(m3)
 robust.se(m3)[,2]
 ```
 
+## Part 2
+
+Load data, package, and show descriptive statistics: 
+
+```{r, echo=FALSE}
+setwd("~/Google Drive/W271 - Applied Regression & Time Series/Assignment/lab3_forStudents_2/lab3_data")
+data <- read.csv('lab3_series02.csv', header = T)
+str(data)
+x <- ts(data$DXCM.Close)
+summary(x)
+```
+
+Let's evaluate the time series plot, histogram, ACF and PACF of the data:
+
+```{r,echo=FALSE}
+par(mfrow=c(2,2))
+hist(x, breaks="FD", col="blue",main="Histogram DXCM Closing Price")
+ts.plot(x, main="DXCM Closing Price Series")
+acf(x, 30, main="ACF : DXCM Closing Price")
+pacf(x,30, main="PACF: DXCM Closing Price")
+
+# Box test
+Box.test(x, type="Ljung-Box")
+```
+
+The Box test indicates that our original series $x$ is **not** a stationary series, and we can observe a upward trend, thus simple ARMA model won't be adequate and we further evaluate the difference of the $x$, $x_d$:
+
+```{r,echo=FALSE}
+xd <- diff(x)
+par(mfrow=c(2,2))
+hist(xd, breaks="FD", col="blue",main="Histogram DXCM Closing Diff")
+ts.plot(xd, main="DXCM Closing Difference")
+acf(xd, 30, main="ACF : DXCM Closing Difference")
+pacf(xd,30, main="PACF: DXCM Closing Difference")
+# box test
+Box.test(xd, type="Ljung-Box")
+```
+
+Box test now indicates $x_d$ is stationary, however we can see that the variance of $x_d$ is time-varying, as such, we **cannot** apply ARIMA alone. To address that, let's obtain the return series of our original series $y_t=\frac{x_t-x_{t-1}}{x_{t-1}}$, and apply GARCH model on the return series:
+
+```{r, echo=FALSE}
+y <- xd/x[2:length(x)]
+par(mfrow=c(2,2))
+hist(y, breaks="FD", col="blue",main="Histogram DXCM Return")
+ts.plot(y, main="DXCM Return")
+acf(y, 30, main="ACF : DXCM Return")
+pacf(y,30, main="PACF: DXCM Return")
+# box test
+Box.test(y, type="Ljung-Box")
+y.garch <- garchFit(y~garch(1,1), trace=F)
+#plot(y.garch)
+```
+
+
+## Part 3
+
+```{r, echo=FALSE}
+setwd("~/Google Drive/W271 - Applied Regression & Time Series/Assignment/lab3_forStudents_2/lab3_data")
+data <- read.csv('globalWarming.csv', header = T)
+str(data)
+x <- ts(data$data.science) #start=c(2004,1,4), end=c(2016,1,24), frequency = 1
+summary(x)
+ts.plot(x)
+```
