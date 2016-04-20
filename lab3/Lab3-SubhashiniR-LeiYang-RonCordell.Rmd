@@ -186,26 +186,20 @@ The first set of plots reveals:
 * We do not know the frequency of the time series;
 * The series is of closing prices of DXCM
 
-Since this is a time series of the closing price of a stock or other NYSE symbol we infer that these are daily closings and that they have a weekly frequency. Therefore to work with seasonality we reform the time series object in R as follows:
+To remove the trend from the series we take the first difference and replot to check the results.
 
-```{r part2_timeseries_frequency, echo=TRUE, message=FALSE, warning=FALSE}
+```{r part2_diff_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
 
-To remove the trend from the series we take the first difference and replot to check the results. In the differenced series we observe:
+```{r part2_summarize_diff_data_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+
+In the differenced series we observe:
 
 * The first difference series has a more or less white noise appearance until approximately time interval 1600 where the volatility of the series increases dramatically. This corresponds to the sudden, persistent upward trend in the original series.
 * The autocorrelation shows marginally significant results at lags 13, 15, 16, 24, 31
 * The partial autocorrelation shows a cyclic behavior that doesn't appear to decline, with significant results at lags 11, 13, 14, 15, 16, 24, 25, 31
 
-```{r part2_loaddata, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
-```
-
-```{r part2_tsplots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
-```
-\newpage
-
-```{r part2_diff_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
-```
 ```{r part2_diff_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
 ```
 \newpage
@@ -216,17 +210,15 @@ We also examine the first difference of the log of the series and replot to chec
 * The ACF shows only a small results at lag 15 and 20.
 * The PACF shows a cyclic behavior with significant results at lags 9, 15, 20
 
-We choose to use the diffenced log-series since this is a financial time series and we can discuss returns in terms of percentage-changes to the closing price.
-
 ```{r part2_difflog_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
 ```{r part2_difflog_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
 ```
 \newpage
 
-The seasonality of the series is not strong in the ACF of the differenced series. However, there are hints of a 5 day cycle that corresponds to the weekly frequency. There are stronger spikes that appear in lags 15 and 30 that support a multiple or harmonic of 5. We will use a seasonality factor of 365.25/7 in order to deal with the varying number of weeks per year.
+The seasonality of the series is not strong in the ACF of the differenced series. However, there are hints of a 5 day cycle that corresponds to the weekly frequency. There are stronger spikes that appear in lags 15 and 30 that support a multiple or harmonic of 5.
 
-The ACF and PACF of the differenced seasonal series show evidence of an underlying AR process
+The ACF and PACF of the differenced seasonal series show evidence of an underlying MA(5) process
 
 ```{r part2_seasonal_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
@@ -234,48 +226,49 @@ The ACF and PACF of the differenced seasonal series show evidence of an underlyi
 ```
 \newpage
 
-```{r part2_multiple_model_calcs, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
-```
-
 ### Model Selection
 
-We build a model grid of SARIMA models to from SARIMA(0,1,1)(0,1,0) to SARIMA(2,1,1)(1,1,1) and use the model results to present the parameters in tabular format for comparison. All models use a seasonal value of 365.25/7, or just a bit over 52.
+We use the `get.best.arima` function from the async materials and the Introductory Time Series with R book [Cowpertwait, Metcalfe - 2009] to perform a search for the best ARIMA model. The procedure results in an ARIMA(0,1,0) estimated model.
 
-The parameters of the 24 models are split into 3 tables of 8 models; each successive table contains models with more parameters. Comparing the AICc and Log Likelihood values reveals that there are a cluster of models around the AICc value of 8610. The most parsimonious model is the SARIMA(0,1,1)(0,1,0)[52] model but the model is not stationary because the lagged coefficient polynomial root is on the unit circle. In fact, the only models in this grid that do not have roots on the unit circle are the SARIMA(1,1,0)(0,1,0)[52] and SARIMA(1,1,1)(1,1,1)[52] models, with AICc values of -7673 and -8469, respectively. Therefore we choose the SARIMA(1,1,1)(1,1,1)[52] model as the most appropriate. The root plot for this model is shown below; the tables for the model parameters follow on the next two pages.
 
-```{r part2_multi_model_root_plot_12, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
+```{r part2_models, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_arima_summary_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+```{r part2_model_plot_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
 
-\blandscape
-```{r part2_multiple_model_table1_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+\newpage
+```{r part2_model_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
+```
+
+The residuals show an increased volatility at the right end of the residuals graph, and the PACF of the squared residuals shows definite autocorrelation of the residuals.
+
+The ARIMA(0,1,0) model of the captures a good deal of the time series' behavior and it is a very parsimonious model.
+
+Since the residuals of the ARIMA(0,1,0) model shows time-dependency we fit a GARCH model to the residual of the ARIMA model. The result is a GARCH(1,1) model where all parameters are significant. We fail to reject the hypothesis that the residuals are IID based on the results of the Ljung-Box test on the squared residuals. The summary of the GARCH model output is shown below.
+
+```{r part2_garch_model, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part2_garch_model_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
 ```
 \newpage
-```{r part2_multiple_model_table2_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r part2_garch_model_table_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
 ```
-\newpage
-```{r part2_multiple_model_table3_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r part2_garch_model_summary, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
 ```
-\elandscape
-\newpage
-### SARIMA (1,1,1)(1,1,1)[52] Model Residual Analysis
 
-The residual plots of the SARIMA(1,1,1)(1,1,1)[52] model show that the residual has a volatility that changes over time. The PACF of the squared residuals show that a ARCH model could be used for the residuals.
- 
-```{r part2_multi_model_residual_plot_12, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
-```
+The complete ARIMA(0,1,0)-GARCH(1,1) model looks like:
+
+$$y_{t}-y_{t-1} = .010761 + .153134 \epsilon_{t-1}^{2}+ .805974 \hat{h}_{t-1}$$ 
+
+All of these models exhibit time-dependent residuals so we fit a GARCH model to the residuals of the resulting model
 \newpage
 
-### ARCH Model Analysis
-
-We analyse potential ARCH models by constructing models of increasing order and plotting the squared residuals. Once the squared residuals have no statistically significant lags we select the result ARCH model order. Using this process we arrive at an ARCH(7)/GARCH(0,7) model.
-
-```{r part2_garch_model12, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```{r part2_forecast_model, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
-```{r part2_garch_model12_ci, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r part2_forecast_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
 ```
-```{r part2_garch_model_residual_plot12, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
-```
-
 
 \newpage
 ```{r setup3, echo=FALSE}
@@ -285,7 +278,145 @@ knitr::read_chunk('lab3-part3.R')
 
 ## Part 3 - Forecast Web Search Activity for "Global Warming"
 
+```{r part3_loaddata, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
+### Exploratory Data Analysis
+
+The time series is a weekly measurement of the frequency of a search phrase over a period from 1/4/2004 to 1/24/16 and we have no other information. The plot reveals that from 2004 to around 2012 there is very little activity; after 2012 the activity begins increasing persistently at a steep rate.
+
+```{r part3_summarize_data_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+```{r part3_ts_initial_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+\newpage
+We can fit a model that does a better job of forecasting if we take that part of the series that contains the data since about 2012 on which to estimate a model. An analysis of the series indicates that the split point is around 2011. We split the series into 2004-2010 and 2011-2016 in order to capture the variation in the later part of the model. We measure this by observing the autocorrelation in each portion of the series to minimize the autocorrelation in the early series and maximize it in the later series.
+
+The following two pages show the comparative time series plots, ACF and PACF for the early and later time series.
+
+```{r part3_ts_extract, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part3_compare_ts_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+\newpage
+```{r part3_plots_ts1, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+\newpage
+```{r part3_plots_ts2, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
 \newpage
 
+### Time Series 2011-2015 Data Exploration
+
+We can see from the plots on the previous page that the time series is not stationary. It has a persistent trend and exhibits seasonality with an increasing variance. We first examine the first difference of the series.
+
+```{r part3_ts2_diff_calc, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part3_plots_ts2_diff, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+
+The resulting differenced series has increasing volatility over time. The ACF is indicative of an AR(2) process and the PACF indicates an MA process as well.
+\newpage
+
+The seasonal component is present and seems to be in multiples of 4 and 13.
+
+```{r part3_seasonal_diff, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part3_seasonal_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+\newpage
+
+### Modeling
+
+We use the `auto.arima` function to estimate the best SARIMA model and we obtain a SARIMA(1,1,1)(0,1,1)[52].
+
+```{r part3_model, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part3_model_plot_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+\newpage
+```{r part3_model_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+\newpage
+
+Garch model
+
+```{r part3_garch, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part3_garch_residual_plots_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+
+### Forecast
+
+
+```{r part3_forecast, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part3_forecast_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+
+
+
+\newpage
+```{r setup4, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
+knitr::read_chunk('lab3-part4.R')
+```
+
+```{r part4_loaddata, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
 ## Part 4 - Forecast Inflation-Adjusted Gas Price
+
+### Exploratory Data Analysis
+
+The _gasOil_ series consists of 410 observations of two variables, _Production_ and _Price_. As described the _Production_ variable is in units of Million Barrels of Oil and _Price_ is in inflation adjusted US Dollars. The observations are monthly beginning 1978/1/1 and ending 2012/2/1. The plots of the two variables indicate that both series appear similar to random walks: they have varying trends up and down over time. The _Production_ series appears to have a seasonal component. The _Price_ series may have a seasonal component as well but it isn't as prominent. A scatterplot of the two variables does not reveal any obvious correlation.
+
+
+```{r part4_create_ts, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+```{r part4_plot_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.0}
+```
+\newpage
+```{r part4_plot_qplot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=4.0}
+```
+
+```{r part4_diff_series, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+
+#### Change in Production and Change in Price
+
+We take the difference of each series in order to compate the change in production to the change in price. We also scale the two variables so as to have zero mean and a standard deviation of 1.0 to make them more comparable. Now the scatterplot appears as a cluster about the origin of the graph.
+
+```{r part4_summarize_diff_data_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+```{r part4_differenced_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.25, fig.height=6.0}
+```
+\newpage
+
+```{r part4_differenced_qplot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.25, fig.height=4.0}
+```
+
+### Model Recreation
+
+The AP analysis states that there is no statistically significant correlation between oil production and gas prices. We can reconstruct a means of measuring a correlation and its significance using linear regression. We perform a regression on both the _Production_ and _Price_ variables as well as the _Change in Production_ and _Change in Price_. The results of the regressions are summarized in the table, below.
+
+The regression on the _change in production_ and the _change in price_ shows a marginally significant p-value but only at the $\alpha=0.1$ level. The standard error shows that the estimate range crosses 0 so it is not distinguishable from 0.  As expected all regression coefficients are not distinguishable from 0 and this reproduces the AP analysis conclusion that there is no statistically significate correlation between the two variables.
+
+#### Critique 
+
+Comparing _Price_ and _Production_ in this way does not take into account the dependency on time. Each variable has it's own seasonal effects and its own volatility. A more careful analysis would compare the variables as time series and analyse the lagged relationships and seasonal factors.
+
+```{r part4_lm, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```
+\blandscape
+```{r part4_summarize_regression_models_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+\elandscape
+
+### Time Series Analysis
+
+The _Price_ series observations are...
+
+```{r part4_plots_ts_price, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.25, fig.height=6.0}
+```
 

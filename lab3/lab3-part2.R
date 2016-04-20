@@ -31,7 +31,6 @@ options(xtable.comment=FALSE)
 #########################################################################
 ## ---- part2_loaddata ----
 ts1.csv_load <- read.csv('lab3_data/lab3_series02.csv')
-#ts1 <- ts(ts1.csv_load$DXCM.Close, frequency = 365.25/7) # weekly)
 ts1 <- ts(ts1.csv_load$DXCM.Close)
 
 # Exploratory Data Analysis
@@ -46,14 +45,14 @@ str(ts1)
 fit.df <- data.frame(ts1)
 class(df)
 stargazer(fit.df, type="text", header=FALSE,
-          title="Descriptive Statistics", digits=1,
+          title="DXCM Series Descriptive Statistics", digits=1,
           covariate.labels = "DXCM Series")
 
 ## ---- part2_summarize_data_latex -----
 fit.df <- data.frame(ts1)
 class(df)
 stargazer(fit.df, type="latex", header=FALSE,
-          title="Descriptive Statistics", digits=1,
+          title="DXCM Series Descriptive Statistics", digits=1,
           covariate.labels = "DXCM Series")
 
 ## ---- part2_tsplots ----
@@ -72,20 +71,31 @@ pacf(ts1, main="Partial Autocorrelation of DXCM",
 # period 500, 1200, 1800, and 2200 (approximately). The autocorrelation 
 # shows a slight decay over more than 30 lags while the partial 
 # autocorrelation shows bareley statistically significant results at lags
-# 14 and 32 which could be spurious. There is seasonality in the time series
-# so we need to recast the ts object with a frequency. Since this is a daily
-# closing price and markets are open 5 days/week we will set the frequency
-# as weekly even though there are not the same number of weeks every year.
+# 14 and 32 which could be spurious. The mean of the series is 23.2.
 
 ## ---- part2_timeseries_frequency ----
 
-ts1 <- ts(ts1.csv_load$DXCM.Close, frequency = 365.25/7)
+ts1 <- ts(ts1.csv_load$DXCM.Close, frequency = 1)
 
 ## ---- part2_diff_calcs ----
 # detrend by taking the first difference
 ts1.diff <- diff(ts1)
 
-summary(ts1.diff)
+## ---- part2_summarize_diff_data_text -----
+fit.df <- data.frame(ts1.diff)
+class(df)
+stargazer(fit.df, type="text", header=FALSE,
+          title="Differenced Series Descriptive Statistics", digits=1,
+          covariate.labels = "DXCM Differenced Series")
+
+## ---- part2_summarize_diff_data_latex -----
+fit.df <- data.frame(ts1.diff)
+class(df)
+stargazer(fit.df, type="latex", header=FALSE,
+          title="Differenced Series Descriptive Statistics", digits=1,
+          covariate.labels = "DXCM Differenced Series")
+
+# The mean of the differenced time series is 0.02 so much closer to 0.
 
 ## ---- part2_diff_plots ----
 par(mfrow=c(2,2))
@@ -121,26 +131,6 @@ pacf(ts1.diff_log, main="PACF of First Differenced Log-Series",
      xlab="Lag", lag.max = 30)
 
 
-## ---- part2_diff2_calcs ----
-ts1.diff2 <- diff(ts1.diff)
-
-summary(ts1.diff2)
-
-## ---- part2_diff2_plots ----
-par(mfrow=c(2,2))
-plot.ts(ts1.diff2, main="Twice Differenced Series", 
-        ylab="Price", xlab="Interval")
-hist(ts1.diff2, main="Histogram of Twice Differenced",
-     xlab="log(Price)", breaks=50)
-acf(ts1.diff2, main="ACF of Twice Differenced Series",
-    xlab="Lag")
-pacf(ts1.diff2, main="PACF of Twice Differenced Series",
-     xlab="Lag")
-
-# Only the plot of the log(diff) is very different - the volatility is shifted up to
-# around 500, with spikes occuring more frequently throughout. Need to understand 
-# better what the PACF is telling me
-
 ## ---- part2_seasonal_calcs ----
 # Our assumption is a weekly seasonality, so every 5 business days. Let's examine
 # a first differenced seasonality to get some hints for model parameters
@@ -160,80 +150,155 @@ pacf(ts1.diff, main="PACF of Difference Series",
      xlab="Lag")
 
 # the plots suggest an underlying AR process for seasonality
+# but for now we're going to stick with an ARIMA model
 
 ## ---- part2_models ----
+# ARIMA model selection code from the book and async
+# procedure to get best ARIMA order
+get.best.arima <- function(x.ts, maxord = c(1,1,1))
+{
+  best.aic <- 1e8
+  n <- length(x.ts)
+  for (p in 0:maxord[1]) for(d in 0:maxord[2]) for(q in 0:maxord[3]) 
+  {
+    fit <- arima(x.ts, order = c(p,d,q))
+    fit.aic <- -2 * fit$loglik + (log(n) + 1) * length(fit$coef)
+    if (fit.aic < best.aic) 
+    {
+      best.aic <- fit.aic
+      best.fit <- fit
+      best.model <- c(p,d,q) 
+    }
+  }
+  list(best.aic, best.fit, best.model)
+}
+# model selection
+order = get.best.arima(ts1, maxord = c(2,2,2))[[3]]
 
-ts1.fit1 <- Arima(ts1, order=c(2,1,2), seasonal = list(order=c(1,1,0), 365.25/7))
+# best model is ARIMA(0,1,0)
+ts1.fit1 <- Arima(ts1, order=order)
 summary(ts1.fit1)
-t(confint(ts1.fit1))
-
-plot.ts(ts1.fit1$residuals)
-acf(ts1.fit1$residuals^2, main="",
-    xlab="Lag")
+t(confint(ts1.fit1)) # there aren't any coefficients
 
 ## ---- part2_arima_summary_text ----
 
 fit.df <- data.frame(cbind(ts1, fitted(ts1.fit1), ts1.fit1$residuals))
 class(df)
-stargazer(fit.df, type="text",title="Descriptive Statistics", digits=1,
-          covariate.labels = c("DXCS Series","Model", "Residuals"))
+stargazer(fit.df, type="text",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("DXCS Series","ARIMA(0,1,0) Model", "Residuals"))
 
 ## ---- part2_arima_summary_latex ----
 
 fit.df <- data.frame(cbind(ts1, fitted(ts1.fit1), ts1.fit1$residuals))
 class(df)
-stargazer(fit.df, type="latex",title="Descriptive Statistics", digits=1,
-          covariate.labels = c("DXCS Series","Model", "Residuals"))
+stargazer(fit.df, type="latex",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("DXCS Series","ARIMA(0,1,0) Model", "Residuals"))
 
+## ---- part2_model_plot_ts ----
 par(mfrow=c(1,1))
-plot.ts(ts1, col='blue', 
-        main='Time Series vs. ARIMA(1,1,1) Model',
+plot.ts(ts1, col='cyan', 
+        main='Time Series vs. ARIMA(0,1,0) Model',
         ylab='Original and Estimated Values', xlab='Period',
-        pch=1, lty=2)
+        pch=1, lty=1)
 par(new=T)
 plot.ts(fitted(ts1.fit1), col='navy', axes=F,
-        xlab='',ylab='', lty=1)
+        xlab='',ylab='', lty=2)
 par(new=T)
 plot.ts(ts1.fit1$residuals, axes=F, xlab='', ylab='', col='green',
         lty=2, pch=1, col.axis='green', ylim=c(-15,50))
 axis(side=4, col='green')
-leg.txt <- c("Original Series", "ARIMA(1,1,1)")
-legend("topleft", legend=leg.txt, lty=c(2,1), col=c("blue","green"),
+leg.txt <- c("Original Series", "ARIMA(0,1,0)", "Residual")
+legend("topleft", legend=leg.txt, lty=c(2,1), col=c("cyan","navy","green"),
        bty='n', cex=1)
 # a really good fit but...
-# do we need to add a GARCH model on the residuals of the ARIMA(1,1,1) model??
 
 ## ---- part2_model_residual_plots ----
 par(mfrow=c(2,2))
-plot.ts(ts1.fit1$residuals, main="ARIMA(1,1,1) Residuals", 
+plot.ts(ts1.fit1$residuals, main="ARIMA(0,1,0) Residuals", 
         ylab="Price", xlab="Interval")
-hist(ts1.fit1$residuals, main="Histogram of ARIMA(1,1,1) Residuals",
+hist(ts1.fit1$residuals, main="Histogram of ARIMA(0,1,0) Residuals",
      xlab="log(Price)", breaks=50)
-acf(ts1.fit1$residuals, main="ACF of ARIMA(1,1,1) Residuals",
+acf(ts1.fit1$residuals, main="ACF of ARIMA(0,1,0) Residuals",
     xlab="Lag")
-acf(ts1.fit1$residuals^2, main="ACF of ARIMA(1,1,1) Residuals Squared",
+acf(ts1.fit1$residuals^2, main="ACF of ARIMA(0,1,0) Residuals Squared",
      xlab="Lag")
 
 ## ---- part2_garch_model ----
 # use a GARCH model for the residuals
-ts1.garch <- garch(ts1.fit1$residuals, order=c(0,8), trace=FALSE)
+ts1.garch <- garchFit(ts1.fit1$residuals~garch(1,1), trace=FALSE)
 summary(ts1.garch)
 
 ## ---- part2_garch_model_residual_plots ----
+res <- ts1.garch@residuals
 par(mfrow=c(2,2))
-plot.ts(ts1.garch$residuals, main="ARIMA(1,1,1)GARCH(1,1) Residuals", 
+plot.ts(res, main="GARCH(1,1) Residuals", 
         ylab="Price", xlab="Interval")
-hist(ts1.garch$residuals, main="Histogram of ARIMA(1,1,1)GARCH(1,1) Residuals",
+hist(res, main="Histogram GARCH(1,1) Residuals",
      xlab="log(Price)", breaks=50)
-acf(ts1.garch$residuals, main="ACF of ARIMA(1,1,1)GARCH(1,1) Residuals",
+acf(res, main="ACF GARCH(1,1) Residuals",
     xlab="Lag", na.action = na.omit)
-acf(ts1.garch$residuals^2, main="ACF of ARIMA(1,1,1)GARCH(1,1) Residuals Squared",
+acf(res, main="ACF GARCH(1,1) Residuals Squared",
     xlab="Lag", na.action = na.omit)
 
+## ---- part2_garch_model_table_latex ----
+texreg(ts1.garch, digits=3, 
+       caption.above = 'GARCH(1,1) Model Parameters',
+       custom.model.names = c('GARCH(1,1)'))
+
+## ---- part2_garch_model_summary ---
+summary(ts1.garch)
+
+## ---- part2_forecast_model ----
+
+# standard error of the residuals from the ARIMA model
+se.resid <- sqrt(ts1.fit1$sigma2) 
+
+# forecast with GARCH model
+ts1.garch.fcast <- predict(ts1.garch, n.ahead = 36)
+# forecast with ARIMA model
+ts1.forecast <- forecast.Arima(ts1.fit1, h=36)
+# standard errors from the ARIMA model (for prediction)
+se.arima <- (ts1.forecast$upper[,2]-ts1.forecast$mean)/1.96
+# forecasting conditional standard errors from GARCH
+cse.garch <- ts1.garch.fcast$standardDeviation
+# put the conditional SE back to ARIMA SE
+se.combine <- se.arima / se.resid * cse.garch
+ts1.forecast$mean <- ts1.forecast$mean + ts1.garch.fcast$meanForecast 
+ts1.forecast$lower[,2] <- ts1.forecast$mean - 1.96 * se.combine
+ts1.forecast$lower[,1] <- ts1.forecast$mean - 1.645 * se.combine
+ts1.forecast$upper[,2] <- ts1.forecast$mean + 1.96 * se.combine
+ts1.forecast$upper[,1] <- ts1.forecast$mean + 1.645 * se.combine
+
+## ---- part2_forecast_plot ----
+par(mfrow=c(1,1))
+plot(ts1.forecast,
+     main="36-Step Ahead Forecast and Original & Estimated Series",
+     xlab="Time Period", 
+     ylab="Original, Estimated, and Forecasted Values",
+     xlim=c(2100,2368),ylim=c(50,100),lty=2,lwd=1.5)
+par(new=T)
+plot.ts(fitted(ts1.fit1),col="blue", 
+        lty=2, lwd=2, xlab="",ylab="",xlim=c(2100,2368),ylim=c(50,100))
+leg.txt <- c("Original", "Estimated", "Forecast")
+legend("topright", legend=leg.txt, lty=c(2,2,1), lwd=c(1,2,2),
+       col=c("black","blue","blue"), bty='n', cex=1)
+
+## ---- part2_end ----
+
+####################################################################
+#
+# This section is exploratory code and experimentation with garch
+#
+####################################################################
+
+
+# Examine the results of an auto model algorithm such as auto.arima
 ## ---- part2_auto_model ----
 
 # first lets try an auto.arima fit and compare
-ts1.auto <- auto.arima(log(ts1))
+ts1.auto <- auto.arima(ts1)
 summary(ts1.auto)  # ARIMA(2,1,2)
 # the residuals definitely show time variance
 
@@ -241,247 +306,147 @@ summary(ts1.auto)  # ARIMA(2,1,2)
 
 fit.df <- data.frame(cbind(ts1, fitted(ts1.auto), ts1.auto$residuals))
 class(df)
-stargazer(fit.df, type="text",title="Descriptive Statistics", digits=1,
-          covariate.labels = c("DXCS Series","Model", "Residuals"))
+stargazer(fit.df, type="text",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("DXCS Series","ARIMA(2,1,2) Model", "Residuals"))
 
 ## ---- part2_auto_model_summary_latex ----
 
 fit.df <- data.frame(cbind(ts1, fitted(ts1.auto), ts1.auto$residuals))
 class(df)
-stargazer(fit.df, type="text",title="Descriptive Statistics", digits=1,
-          covariate.labels = c("DXCS Series","Model", "Residuals"))
+stargazer(fit.df, type="latex",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("DXCS Series","ARIMA(2,1,2) Model", "Residuals"))
 
 ## ---- part2_auto_model_residual_plots ----
 par(mfrow=c(2,2))
-plot.ts(ts1.auto$residuals, main="ARIMA(2,1,1) Residuals", 
+plot.ts(ts1.auto$residuals, main="ARIMA(2,1,2) Residuals", 
         ylab="Price", xlab="Interval")
-hist(ts1.auto$residuals, main="Histogram of ARIMA(2,1,1) Residuals",
+hist(ts1.auto$residuals, main="Histogram of ARIMA(2,1,2) Residuals",
      xlab="log(Price)", breaks=50)
-acf(ts1.auto$residuals, main="ACF of ARIMA(2,1,1) Residuals",
+acf(ts1.auto$residuals, main="ACF of ARIMA(2,1,2) Residuals",
     xlab="Lag")
-acf(ts1.auto$residuals^2, main="ACF of ARIMA(2,1,1) Residuals Squared",
+acf(ts1.auto$residuals^2, main="ACF of ARIMA(2,1,2) Residuals Squared",
      xlab="Lag")
 
-## ---- part2-auto_garch_model ----
-# use a GARCH model for the residuals
-ts1.garch <- garchFit(~ garch(1,1), data=ts1.auto$residuals, trace=FALSE)
-summary(ts1.garch)
+## ---- part2_auto_model_plot_ts ----
+# plot the model and series together for a comparative visual
+par(mfrow=c(1,1))
+plot.ts(ts1, col="navy", 
+        main="DXCM Time Series",
+        ylab="Price",
+        xlab="Interval",
+        ylim=c(0,100), pch=1, lty=1)
+par(new=T)
+plot.ts(fitted(ts1.auto),col="blue",axes=F,
+        xlab="",ylab="", lty=2) 
+par(new=T)
+plot.ts(ts1.auto$residuals, axes=F, xlab='', ylab='', col='green',
+        lty=2, pch=1, col.axis='green', ylim=c(-15,50))
+axis(side=4, col='green')
+leg.txt <- c("Original Series", "Estimated Series", "Residuals")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), 
+       col=c("navy","blue","green"), bty='n', cex=1)
 
-## ---- part2_auto_garch_model_residual_plots ----
-par(mfrow=c(2,2))
-plot.ts(ts1.garch@residuals, main="ARIMA(2,1,1)GARCH(1,1) Residuals", 
-        ylab="Price", xlab="Interval")
-hist(ts1.garch@residuals, main="Histogram of ARIMA(2,1,1)GARCH(1,1) Residuals",
-     xlab="log(Price)", breaks=50)
-acf(ts1.garch@residuals, main="ACF of ARIMA(2,1,1)GARCH(1,1) Residuals",
-    xlab="Lag")
-acf(ts1.garch@residuals^2, main="ACF of ARIMA(2,1,1)GARCH(1,1) Residuals Squared",
-    xlab="Lag")
+# Examine the results of an auto algorithm on the log series
+## ---- part2_auto_log_model ----
 
-
-## ---- part2_difflog_auto_model ----
-
-ts1.difflog.auto <- auto.arima(diff(log(ts1)), seasonal = TRUE)
-summary(ts1.difflog.auto)  # ARIMA(0,1,0)
+# first lets try an auto.arima fit and compare
+# set for stationary models only
+ts1.log <- log(ts1)
+ts1.autolog <- auto.arima(ts1.log)
+summary(ts1.autolog)  # ARIMA(0,1,0) !
 # the residuals definitely show time variance
 
-## ---- part2_difflog_model_residual_plots ----
+## ---- part2_auto_log_model_summary_text ----
+
+fit.df <- data.frame(cbind(ts1, exp(fitted(ts1.autolog)), ts1.autolog$residuals))
+class(df)
+stargazer(fit.df, type="text",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("Log(Series)","ARIMA(0,1,0) Model", "Residuals"))
+
+## ---- part2_auto_log_model_summary_latex ----
+
+fit.df <- data.frame(cbind(ts1, fitted(ts1.autolog), ts1.autolog$residuals))
+class(df)
+stargazer(fit.df, type="latex",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("Log(Series)","ARIMA(0,1,0) Model", "Residuals"))
+
+## ---- part2_auto_log_model_residual_plots ----
 par(mfrow=c(2,2))
-plot.ts(ts1.difflog.auto$residuals, main="ARIMA(2,1,1) Residuals", 
+plot.ts(ts1.autolog$residuals, main="ARIMA(0,1,0) Residuals", 
         ylab="Price", xlab="Interval")
-hist(ts1.difflog.auto$residuals, main="Histogram of ARIMA(2,1,1) Residuals",
+hist(ts1.autolog$residuals, main="Histogram ARIMA(0,1,0) Residuals",
      xlab="log(Price)", breaks=50)
-acf(ts1.difflog.auto$residuals, main="ACF of ARIMA(2,1,1) Residuals",
+acf(ts1.autolog$residuals, main="ACF of ARIMA(0,1,0) Residuals",
     xlab="Lag")
-acf(ts1.difflog.auto$residuals^2, main="ACF of ARIMA(2,1,1) Residuals Squared",
+acf(ts1.autolog$residuals^2, main="ACF of ARIMA(0,1,0) Residuals Squared",
     xlab="Lag")
 
-## ---- part2-auto_garch_model ----
+## ---- part2_auto_log_model_plot_ts ----
+# plot the model and series together for a comparative visual
+# make the residuals comparable by taking e^residual
+automodelres <- exp(ts1.autolog$residuals)
+par(mfrow=c(1,1))
+plot.ts(ts1, col="navy", 
+        main="DXCM Time Series",
+        ylab="Price",
+        xlab="Interval",
+        ylim=c(0,100), pch=1, lty=1)
+par(new=T)
+plot.ts(exp(fitted(ts1.autolog)),col="blue",axes=F,
+        xlab="",ylab="", lty=2) 
+par(new=T)
+plot.ts(ts1.autolog$residuals, axes=F, xlab='', ylab='', col='green',
+        lty=2, pch=1, col.axis='green', ylim=c(-0.5,1))
+
+axis(side=4, col='green')
+leg.txt <- c("Original Series", "Estimated Log-Series", "Residuals")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), 
+       col=c("navy","blue","green"), bty='n', cex=1)
+
+
+## ---- part2_model_comparison_table_text ----
+screenreg(l=list(ts1.auto, ts1.autolog), digits=3,
+          custom.model.names = c('ARIMA(2,1,2)','ARIMA(0,1,0)'))
+
+## ---- part2_model_comparison_table_latex ----
+texreg(l=list(ts1.auto, ts1.autolog), digits=3, 
+       caption.above = 'ARIMA(2,1,2) and ARIMA(0,1,0)',
+       custom.model.names = c('ARIMA(2,1,2)','ARIMA(0,1,0)'))
+
+## ---- part2_auto_garch_model ----
 # use a GARCH model for the residuals
-ts1.garch <- garchFit(~ garch(1,1), data=ts1.difflog.auto$residuals, trace=FALSE)
+ts1.garch <- garchFit(ts1.autolog$residuals~garch(1,1), trace=FALSE)
+#ts1.garch <- garch(ts1.autolog$residuals, trace=F)
+summary(ts1.garch)
+#ts1.res <- ts1.garch$res[-1]
+ts1.res <- ts1.garch@residuals[-1]
+
+# all parameters are highly significant and the Box-Llung test fails
+# to reject the null hypothesis that the residuals are different 
+# than 0.
+## ---- part2_garch_table_text ----
+screenreg(ts1.garch, digits=3,
+          custom.model.names = c('GARCH(1,1'))
+
+## ---- part2_garch_table_latex ----
+texreg(ts1.garch, digits=3, 
+       caption.above = 'GARCH(1,1) Model Parameters',
+       custom.model.names = c('GARCH(1,1)'))
+
+## ---- part2_garch_summary ---
 summary(ts1.garch)
 
 ## ---- part2_auto_garch_model_residual_plots ----
 par(mfrow=c(2,2))
-plot.ts(ts1.garch@residuals, main="ARIMA(2,1,1)GARCH(1,1) Residuals", 
-        ylab="Price", xlab="Interval")
-hist(ts1.garch@residuals, main="Histogram of ARIMA(2,1,1)GARCH(1,1) Residuals",
-     xlab="log(Price)", breaks=50)
-acf(ts1.garch@residuals, main="ACF of ARIMA(2,1,1)GARCH(1,1) Residuals",
-    xlab="Lag")
-acf(ts1.garch@residuals^2, main="ACF of ARIMA(2,1,1)GARCH(1,1) Residuals Squared",
-    xlab="Lag")
-
-
-## ---- part2_multiple_model_calcs ----
-logts1 <- log(ts1)
-
-# compute non-seasonal models on the differenced series. We'll actually be computing
-# ARIMA models of order d=1, but we need to use fGarch to forecast so we need to use
-# an ARMA model instead on the differenced series.
-a1 <- Arima(ts1.diff_log, order=c(0,0,0))
-a2 <- Arima(ts1.diff_log, order=c(1,0,0))
-a3 <- Arima(ts1.diff_log, order=c(0,0,1))
-a4 <- Arima(ts1.diff_log, order=c(1,0,1))
-a5 <- Arima(ts1.diff_log, order=c(2,0,1))
-a6 <- Arima(ts1.diff_log, order=c(1,0,2))
-a7 <- Arima(ts1.diff_log, order=c(2,0,2))
-a8 <- Arima(ts1.diff_log, order=c(2,0,3))
-a9 <- Arima(ts1.diff_log, order=c(3,0,2))
-a10 <- Arima(ts1.diff_log, order=c(3,0,3))
-
-m1 <- Arima(logts1, order=c(0,1,1), seasonal=list(order=c(0,1,0), 365.25/7))
-m2 <- Arima(logts1, order=c(0,1,1), seasonal=list(order=c(0,1,1), 365.25/7))
-m3 <- Arima(logts1, order=c(0,1,1), seasonal=list(order=c(1,1,0), 365.25/7))
-m4 <- Arima(logts1, order=c(0,1,1), seasonal=list(order=c(1,1,1), 365.25/7))
-m5 <- Arima(logts1, order=c(1,1,0), seasonal=list(order=c(0,1,0), 365.25/7))
-m6 <- Arima(logts1, order=c(1,1,0), seasonal=list(order=c(0,1,1), 365.25/7))
-m7 <- Arima(logts1, order=c(1,1,0), seasonal=list(order=c(1,1,0), 365.25/7))
-m8 <- Arima(logts1, order=c(1,1,0), seasonal=list(order=c(1,1,1), 365.25/7))
-m9 <- Arima(logts1, order=c(1,1,1), seasonal=list(order=c(0,1,0), 365.25/7))
-m10 <- Arima(logts1, order=c(1,1,1), seasonal=list(order=c(0,1,1), 365.25/7))
-m11 <- Arima(logts1, order=c(1,1,1), seasonal=list(order=c(1,1,0), 365.25/7))
-m12 <- Arima(logts1, order=c(1,1,1), seasonal=list(order=c(1,1,1), 365.25/7))
-m13 <- Arima(logts1, order=c(0,1,2), seasonal=list(order=c(0,1,0), 365.25/7))
-m14 <- Arima(logts1, order=c(0,1,2), seasonal=list(order=c(0,1,1), 365.25/7))
-m15 <- Arima(logts1, order=c(0,1,2), seasonal=list(order=c(1,1,0), 365.25/7))
-m16 <- Arima(logts1, order=c(0,1,2), seasonal=list(order=c(1,1,1), 365.25/7))
-m17 <- Arima(logts1, order=c(1,1,2), seasonal=list(order=c(0,1,0), 365.25/7))
-m18 <- Arima(logts1, order=c(1,1,2), seasonal=list(order=c(0,1,1), 365.25/7))
-m19 <- Arima(logts1, order=c(1,1,2), seasonal=list(order=c(1,1,0), 365.25/7))
-m20 <- Arima(logts1, order=c(1,1,2), seasonal=list(order=c(1,1,1), 365.25/7))
-m21 <- Arima(logts1, order=c(2,1,2), seasonal=list(order=c(0,1,0), 365.25/7))
-m22 <- Arima(logts1, order=c(2,1,2), seasonal=list(order=c(0,1,1), 365.25/7))
-m23 <- Arima(logts1, order=c(2,1,2), seasonal=list(order=c(1,1,0), 365.25/7))
-m24 <- Arima(logts1, order=c(2,1,2), seasonal=list(order=c(1,1,1), 365.25/7))
-
-## ---- part2_multiple_model_table1_text ----
-screenreg(list(m1,m2,m3,m4,m5,m6,m7,m8),
-          custom.model.names = c('(0,1,1)|(0,1,0)','(0,1,1)|(0,1,1)',
-                                 '(0,1,1)|(1,1,0)','(0,1,1)|(1,1,1)',
-                                 '(1,1,0)|(0,1,0)','(1,1,0)|(1,1,1)',
-                                 '(1,1,0)|(1,1,0)','(1,1,0)|(1,1,1)'),
-          reorder.coef = c(4,1,3,2))
-
-## ---- part2_multiple_model_table1_latex ----
-texreg(list(m1,m2,m3,m4,m5,m6,m7,m8),
-          custom.model.names = c('(0,1,1)|(0,1,0)','(0,1,1)|(0,1,1)',
-                                 '(0,1,1)|(1,1,0)','(0,1,1)|(1,1,1)',
-                                 '(1,1,0)|(0,1,0)','(1,1,0)|(1,1,1)',
-                                 '(1,1,0)|(1,1,0)','(1,1,0)|(1,1,1)'),
-          reorder.coef = c(4,1,3,2))
-
-## ---- part2_multiple_model_table2_text ----
-screenreg(list(m9,m10,m11,m12,m13,m14,m15,m16),
-          custom.model.names = c('(1,1,1)|(0,1,0)','(1,1,1)|(0,1,1)',
-                                 '(1,1,1)|(1,1,0)','(1,1,1)|(1,1,1)',
-                                 '(0,1,2)|(0,1,0)','(0,1,2)|(1,1,1)',
-                                 '(0,1,2)|(1,1,0)','(0,1,2)|(1,1,1)'),
-          reorder.coef = c(1,2,5,4,3))
-
-## ---- part2_multiple_model_table2_latex ----
-texreg(list(m9,m10,m11,m12,m13,m14,m15,m16),
-          custom.model.names = c('(1,1,1)|(0,1,0)','(1,1,1)|(0,1,1)',
-                                 '(1,1,1)|(1,1,0)','(1,1,1)|(1,1,1)',
-                                 '(0,1,2)|(0,1,0)','(0,1,2)|(1,1,1)',
-                                 '(0,1,2)|(1,1,0)','(0,1,2)|(1,1,1)'),
-          reorder.coef = c(1,2,5,4,3))
-
-## ---- part2_multiple_model_table3_text ----
-screenreg(list(m17,m18,m19,m20,m21,m22,m23,m24),
-          custom.model.names = c('(1,1,2)|(0,1,0)','(1,1,2)|(0,1,1)',
-                                 '(1,1,2)|(1,1,0)','(1,1,2)|(1,1,1)',
-                                 '(2,1,2)|(0,1,0)','(2,1,2)|(1,1,1)',
-                                 '(2,1,2)|(1,1,0)','(2,1,2)|(1,1,1)'),
-          reorder.coef = c(1,6,2,3,5,4))
-
-## ---- part2_multiple_model_table3_latex ----
-texreg(list(m17,m18,m19,m20,m21,m22,m23,m24),
-          custom.model.names = c('(1,1,2)|(0,1,0)','(1,1,2)|(0,1,1)',
-                                 '(1,1,2)|(1,1,0)','(1,1,2)|(1,1,1)',
-                                 '(2,1,2)|(0,1,0)','(2,1,2)|(1,1,1)',
-                                 '(2,1,2)|(1,1,0)','(2,1,2)|(1,1,1)'),
-          reorder.coef = c(1,6,2,3,5,4))
-
-## ---- part2_nonseasonal_model_table1_text ----
-screenreg(list(a2,a3,a4,a5,a6,a7,a8,a9,a10),
-          custom.model.names = c('(1,1,0)','(0,1,1)','(1,1,1)',
-                                 '(2,1,1)','(1,1,2)','(2,1,2)',
-                                 '(2,1,3)','(3,1,2)','(3,1,3)'),
-          reorder.coef = c(2,1,4,7,3,5,6))
-
-## ---- part2_nonseasonal_model_table1_latex ----
-texreg(list(m1,m2,m3,m4,m5,m6,m7,m8),
-       custom.model.names = c('(1,1,0)',
-                              '(0,1,1)','(1,1,1)',
-                              '(2,1,1)','(1,1,2)',
-                              '(2,1,2)','(2,1,3)',
-                              '(3,1,2)','(3,1,3)'),
-       reorder.coef = c(2,1,4,7,3,5,6))
-
-
-## ---- part2_nonseasonal_model_residual_plot ----
-ns <- a9  # a10 is our best pick
-par(mfrow=c(2,2))
-plot.ts(ns$residuals, main="ARIMA Residuals", 
+plot.ts(ts1.res, main="GARCH(1,1) Residuals", 
         ylab="Residual", xlab="Interval")
-hist(ns$residuals, main="Histogram of ARIMA Residuals",
+hist(ts1.res, main="Histogram ofGARCH(1,1) Residuals",
      xlab="log(Price)", breaks=50)
-acf(ns$residuals, main="ACF of ARIMA Residuals",
+acf(ts1.res, main="ACF of GARCH(1,1) Residuals",
     xlab="Lag")
-acf(ns$residuals^2, main="ACF of ARIMA Residuals Squared",
+acf(ts1.res, main="ACF of GARCH(1,1) Residuals Squared",
     xlab="Lag")
-
-## ---- part2_nonseasonal_model_root_plot ----
-plot(ns)
-
-## ---- part2_garch_nonseasonal_model ----
-# use a GARCH model for the residuals
-ns.garch <- garchFit(~arma(1,1)+garch(1,1), ts1.diff_log, trace=FALSE)
-
-## ---- part2_garch_nonseasonal_model_ci ----
-screenreg(ns.garch, digits=4, custom.model.names = c('ARIMA(1,1,1)-GARCH(1,1)'))
-
-## ---- part2_garch_nonseasonal_model_residual_plot ----
-par(mfrow=c(2,2))
-plot.ts(a8.garch@residuals, main="ARCH Residuals", 
-        ylab="Price", xlab="Interval")
-hist(a8.garch@residuals, main="Histogram of ARCH Residuals",
-     xlab="log(Price)", breaks=50)
-acf(a8.garch@residuals, main="ACF of ARCH Residuals",
-    xlab="Lag", na.action = na.omit)
-acf(a8.garch@residuals^2, main="ACF of ARCH Residuals Squared",
-    xlab="Lag", na.action = na.omit)
-
-
-## ---- part2_multi_model_residual_plot_12 ----
-par(mfrow=c(2,2))
-plot.ts(m12$residuals, main="SARIMA Residuals", 
-        ylab="Residual", xlab="Interval")
-hist(m12$residuals, main="Histogram of SARIMA Residuals",
-     xlab="log(Price)", breaks=50)
-acf(m12$residuals, main="ACF of SARIMA Residuals",
-    xlab="Lag")
-acf(m12$residuals^2, main="ACF of SARIMAResiduals Squared",
-    xlab="Lag")
-
-## ---- part2_multi_model_root_plot_12 ----
-plot(m12)
-
-## ---- part2_garch_model12 ----
-# use a GARCH model for the residuals
-m12.garch <- garch(m12$residuals, order=c(0,7), trace=FALSE)
-
-## ---- part2_garch_model12_ci ----
-xtable(t(confint(m12.garch)), caption='ARCH(7) Coefficient Confidence Intervals')
-
-## ---- part2_garch_model_residual_plot12 ----
-par(mfrow=c(2,2))
-plot.ts(m12.garch$residuals, main="ARCH Residuals", 
-        ylab="Price", xlab="Interval")
-hist(m12.garch$residuals, main="Histogram of ARCH Residuals",
-     xlab="log(Price)", breaks=50)
-acf(m12.garch$residuals, main="ACF of ARCH Residuals",
-    xlab="Lag", na.action = na.omit)
-acf(m12.garch$residuals^2, main="ACF of ARCH Residuals Squared",
-    xlab="Lag", na.action = na.omit)

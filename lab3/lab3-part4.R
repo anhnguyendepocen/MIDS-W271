@@ -53,11 +53,11 @@ tail(gasOil)
 
 ## ---- part4_summarize_data_text -----
 stargazer(gasOil, type="text", header=FALSE,
-          title="Descriptive Statistics", digits=2)
+          title="gasOil Series Descriptive Statistics", digits=2)
 
 ## ---- part4_summarize_data_latex -----
 stargazer(gasOil, type="latex", header=FALSE,
-          title="Descriptive Statistics", digits=2)
+          title="gasOil Series Descriptive Statistics", digits=2)
 
 ## ---- part4_create_ts ----
 ts_prod <- ts(gasOil$Production, start=c(1978,1), 
@@ -68,54 +68,92 @@ ts_price <- ts(gasOil$Price, start=c(1978,1),
 ## ---- part4_plot_ts ----
 # plot the two series together for a comparative visual
 
-par(mfrow=c(1,1))
+par(mfrow=c(1,1), xpd=NA)
 plot.ts(ts_prod, col="navy", 
-        main="US Oil Production",
+        main="US Oil Production and Inflation-Adjusted Gas Price",
         ylab="Million BBL/day",
         xlab="Year",
         ylim=c(100,300), pch=1, lty=1)
 par(new=T)
-plot.ts(ts_price,col="green",axes=F,xlab="",ylab="",
-        ylim=c(0.00,6.00), pch=1, lty=1, col.axis="green") 
+plot.ts(ts_price,col="blue",axes=F,xlab="",ylab="",
+        ylim=c(0.00,6.00), pch=1, lty=1, col.axis="blue") 
 leg.txt <- c("US Oil Production", "Gas Price")
 legend("topleft", legend=leg.txt, lty=c(1,1), 
-       col=c("navy","green"), bty='n', cex=1)
-axis(side=4, col="green")
-mtext("Dollars", side=4, line=2,col="green")
+       col=c("navy","blue"), bty='n', cex=1)
+axis(side=4, col="blue")
+mtext("Inlflation-Adjusted Dollars", line=2, side=4, col="blue")
 
 # I'm going to guess that the only thing we can do with the
 # tool set we have is to do a regression of one variable
 # on the other. So let's look at things that way.
 
+## ---- part4_plot_qplot ----
 qplot(Price, Production, data=gasOil,
       geom=c("point", "smooth"),
       main="Gas Price and Oil Production",
       xlab="Gas Price US Dollars",
-      ylab="Oil Production, Millions of Barrels/Day")
+      ylab="Oil Production, Millions of Barrels")
+
+## ---- part4_diff_series ----
 
 # Let's look at the changes with respect to each other
 df_diffs <- data.frame(diff(gasOil$Production), diff(gasOil$Price))
 colnames(df_diffs) <- c('prod_diff','price_diff')
 head(df_diffs)
 
-## ---- part4_summarize_diff_data_text -----
-stargazer(df_diffs, type="text", header=FALSE,
-          title="Descriptive Statistics", digits=2)
-
-## ---- part4_summarize_diff_data_latex -----
-stargazer(df_diffs, type="latex", header=FALSE,
-          title="Descriptive Statistics", digits=2)
-
+# normalize/scale the variables
 scaled.diffs <- as.data.frame(scale(df_diffs))
 
+# create a new time series
+delta.prod <- ts(scaled.diffs$prod_diff, frequency=12)
+delta.price <- ts(scaled.diffs$price_diff, frequency=12)
 
-## ---- part4_plot_qplot_diff ----
+df_h <- cbind(df_diffs, scaled.diffs)
+
+## ---- part4_summarize_diff_data_text -----
+
+stargazer(df_h, type="text", header=FALSE,
+          title="Descriptive Statistics of Differenced Series",
+          digits=2,
+          covariate.labels = c('Change in Production',
+                               'Change in Price',
+                               'Scaled Change in Production',
+                               'Scaled Change in Price'))
+
+## ---- part4_summarize_diff_data_latex -----
+stargazer(df_h, type="latex", header=FALSE,
+          title="Descriptive Statistics of Differenced Series",
+          digits=2,
+          covariate.labels = c('Change in Production',
+                               'Change in Price',
+                               'Scaled Change in Production',
+                               'Scaled Change in Price'))
+
+## ---- part4_differenced_plots ----
+
+par(mfrow=c(1,1), xpd=NA)
+plot.ts(delta.prod, col="navy", 
+        main="Change in Production and Change in Price",
+        ylab="Change",
+        xlab="Interval",
+        pch=1, lty=1)
+par(new=T)
+plot.ts(delta.price,col="blue",axes=F,xlab="",ylab="",
+        pch=1, lty=1, 
+        col.axis="blue") 
+leg.txt <- c("Change in Production", "Change in Price")
+legend("topleft", legend=leg.txt, lty=c(1,1), 
+       col=c("navy","blue"), bty='n', cex=1)
+
+## ---- part4_differenced_qplot ----
+
 qplot(price_diff, prod_diff, data=scaled.diffs,
       geom=c("point", "smooth"),
       main="Normalized Change in Gas Price and Oil Production",
       xlab="Change in Gas Price",
       ylab="Change Oil Production")
 
+## ---- part4_lm ----
 model1 <- lm(prod_diff ~ price_diff, data=scaled.diffs)
 summary(model1)
 
@@ -130,13 +168,19 @@ summary(model4)
 
 ## ---- part4_summarize_regression_models_text -----
 stargazer(model1, model2, model3, model4, type="text", header=FALSE,
+          title='Oil Production and Gas Price Model Summary',
           covariate.labels = c('Change in Price','Price',
                                'Change In Production','Production'),
           dep.var.labels = c('Change in Production', 'Production',
                              'Change in Price','Price'), digits=5)
 
 ## ---- part4_summarize_regression_models_latex -----
-stargazer(model1, model2, type="latex", header=FALSE)
+stargazer(model1, model2, model3, model4, type="latex", header=FALSE,
+          title='Oil Production and Gas Price Model Summary',
+          covariate.labels = c('Change in Price','Price',
+                               'Change In Production','Production'),
+          dep.var.labels = c('Change in Production', 'Production',
+                             'Change in Price','Price'), digits=5)
 
 # At this point I'm not sure what else to do. I have no information
 # about what process the AP used to produce their analysis, so I have
@@ -173,7 +217,9 @@ summary(ts_price)
 ## ---- part4_model_price ----
 price.ar <- ar(ts_price, method='mle')
 price.ar$order
-price.arima <- auto.arima(ts_price, max.p=12, max.q=12, max.d=2, max.P=12, max.Q=12, max.D=1, seasonal = T, stationary=T)
+price.arima <- auto.arima(ts_price, max.p=12, max.q=12,
+                          max.d=2, max.P=12, max.Q=12,
+                          max.D=1, seasonal = T)
 summary(price.arima)
 
 plot.ts(price.arima$residuals, main="ARIMA Residuals", 
