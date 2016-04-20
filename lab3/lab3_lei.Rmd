@@ -279,14 +279,14 @@ get.best.arima <- function(x.ts, maxord = c(1,1,1))  # don't change any of this 
   list(best.aic, best.fit, best.model)
 }
 # model selection
-x.best = get.best.arima(x, maxord = c(2,2,2))[[3]]
+#x.best = get.best.arima(x, maxord = c(2,2,2))[[3]]
 ```
 
 the best order of ARIMA is $(0,1,0)$:
 
 ```{r, echo=F}
 # fit ARIMA(0,1,0)
-x.arima <- arima(x, order=x.best)
+x.arima <- arima(x, order=c(2,1,2))
 # Model Diagnostics: Residuals
 summary(x.arima$resid)
 Box.test(x.arima$resid, type="Ljung-Box")
@@ -294,8 +294,7 @@ Box.test(x.arima$resid, type="Ljung-Box")
 par(mfrow=c(2,2))
   plot(x.arima$resid, col="blue", main="Residual Series")
   hist(x.arima$resid, col="gray", main="Residuals")
-  acf(x.arima$resid , ylim=c(0,0.2), main="ACF: Residual Series")
-  #pacf(x.arima$resid, ylim=c(-0.4,1), main="PACF: Residual Series")
+  acf(x.arima$resid , ylim=c(0,0.2), main="ACF: Residual Series")  
   acf(x.arima$resid^2 , ylim=c(0,0.2), main="ACF: Squared Residual Series")
 
 ```
@@ -367,11 +366,130 @@ The prediction of $ARIMA(0,1,0)$ gives a flat prediction, due to the fact that t
 
 ## Part 3
 
+Load data and show descriptive statistics:
+
 ```{r, echo=FALSE}
+rm(list=ls())
 setwd("~/Google Drive/W271 - Applied Regression & Time Series/Assignment/lab3_forStudents_2/lab3_data")
 data <- read.csv('globalWarming.csv', header = T)
 str(data)
-x <- ts(data$data.science) #start=c(2004,1,4), end=c(2016,1,24), frequency = 1
+x <- ts(data$data.science, start=c(2004,1,4), frequency = 52)
 summary(x)
-ts.plot(x)
+ts.plot(x, main="Web Search Rate of Global Warming")
 ```
+
+upon close look, it appears the majority of the dynamics of the series appears after 2011, which prior to that it's mostly flat without too much changes. Let's then cut the series into two: before and after 2011
+
+
+```{r}
+cutoff = 365
+x1 <- ts(data$data.science[1:cutoff], start=c(2004,1,4), frequency = 52)
+x2 <- ts(data$data.science[(cutoff+1):630], start=c(2011,1,2), frequency = 52)
+```
+
+we then evaluate ACF of both series, and conduct Box test:
+
+```{r, echo=F}
+par(mfrow=c(2,2))
+acf(x1, ylim=c(0,0.5))
+acf(x1^2, ylim=c(0,0.5))
+acf(x2)
+acf(x2^2)
+
+Box.test(x1, type="Ljung-Box")
+Box.test(x2, type="Ljung-Box")
+```
+
+For series $x_1$, ACF of both original and squared value don't show significant autocorrelation, while $x_2$ shows strong autocorrelation for both. In addition, the Box test indicates that we can't reject the null hypothesis that $x_1$ is white-noise, white $x_2$ is significantly autocorrelated.
+
+Thus we will focus on modeling $x_2$ to predict the search rate of Gobal Warming.
+
+```{r,echo=F}
+par(mfrow=c(2,2))
+  plot(x2, col="blue", main="X2 Series")
+  hist(x2, col="gray", main="Search Rate")
+  acf(x2, main="ACF: X2 Series")
+  pacf(x2, main="PACF: X2 Series")  
+```
+
+From ACF we see that it's a non-staionary series, which show strong persistent upward trend. We then use ARIMA model to fit it.
+
+```{r,echo=F}
+x2.arima <- auto.arima(x2)
+x2.arima
+# Model Diagnostics: Residuals
+#summary(x2.arima$resid)
+Box.test(x2.arima$resid, type="Ljung-Box")
+
+par(mfrow=c(2,2))
+  plot(x2.arima$resid, col="blue", main="Residual Series")
+  hist(x2.arima$resid, col="gray", main="Residuals")
+  acf(x2.arima$resid , ylim=c(0,0.4), main="ACF: Residual Series")  
+  acf(x2.arima$resid^2 , ylim=c(0,0.4), main="ACF: Squared Residual Series")
+```
+
+The best model is ARIMA(1,1,1)(0,1,1)[52], and the ACF of squared residual also indicate its variation is time-varying.
+
+```{r, echo=FALSE}
+# Model Performance Evaluation: In-Sample Fit
+  par(mfrow=c(1,1))
+  plot.ts(x2, col="red", 
+        main="Original vs ARIMA(1,1,1)(0,1,1)[52] Estimated Series with Resdiauls",
+        ylab="Original and Estimated Values", pch=1, lty=2)
+  par(new=T)
+  plot.ts(fitted(x2.arima),col="blue",axes=F,xlab="",ylab="", lty=1) 
+  leg.txt <- c("Original Series", "Estimated Series", "Residuals")
+  legend("topleft", legend=leg.txt, lty=c(1,1,2), 
+         col=c("red","blue","green"), bty='n', cex=1)
+  par(new=T)
+  plot.ts(x2.arima$resid,axes=F,xlab="",ylab="",col="green",
+           lty=2, pch=1, col.axis="green")
+  axis(side=4, col="green")
+  mtext("Residuals", side=4, line=2,col="green")
+```
+
+Similar with part 2, we fit a GARCH model on the residuals, and integrate the conditional variance from GARCH into the prediction of ARIMA model:
+
+```{r, echo=FALSE}
+steps <- 12
+# standard error of the residuals from the ARIMA model
+se.resid <- sqrt(x2.arima$sigma2) # or stdev(x.arima.residuals)
+# fit garch for the residual
+x.res.garch <- garchFit(x2.arima$residuals~garch(1,1), trace=F)
+# forecast with GARCH model
+x.res.garch.fcast <- predict(x.res.garch, n.ahead = steps)
+# forecast with ARIMA model
+forecast <- forecast.Arima(x2.arima, h=steps)
+# standard errors from the ARIMA model (for prediction)
+se.arima <- (forecast$upper[,2]-forecast$mean)/1.96
+# forecasting conditional standard errors from GARCH
+cse.garch <- x.res.garch.fcast$standardDeviation
+# put the conditional SE back to ARIMA SE
+se.combine <- se.arima / se.resid * cse.garch
+forecast$mean <- forecast$mean + x.res.garch.fcast$meanForecast 
+forecast$lower[,2] <- forecast$mean - 1.96 * se.combine
+forecast$lower[,1] <- forecast$mean - 1.645 * se.combine
+forecast$upper[,2] <- forecast$mean + 1.96 * se.combine
+forecast$upper[,1] <- forecast$mean + 1.645 * se.combine
+
+# chart overlay
+plot(forecast,
+     main="12-Step Ahead Forecast and Original & Estimated Series",
+     xlab="Time Period", 
+     ylab="Original and Forecasted Values",
+     lty=2,lwd=1.5)
+par(new=T)
+#plot.ts(fitted(x2.arima),axes=F, col="blue", 
+#        lty=2, lwd=2, xlab="",ylab="")
+leg.txt <- c("Original Series", "Forecast")
+legend("topleft", legend=leg.txt, lty=c(2,2,1), lwd=c(1,2,2),
+       col=c("black","blue"), bty='n', cex=1)
+```
+
+Finally, the ACF of squared residuals of GARCH model shows the variance of residual is no long varying by time.
+
+![Alt text](part3acf2.jpeg "ACF")
+
+## Part 4
+
+
