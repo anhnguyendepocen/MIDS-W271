@@ -20,6 +20,7 @@ library(AER)
 library(fGarch)
 library(ivpack)
 library(stargazer)
+require(forecast)
 # load data
 setwd("~/Google Drive/W271 - Applied Regression & Time Series/Assignment/lab3_forStudents_2/lab3_data")
 data<-read.csv('houseValueData.csv', header=T)
@@ -255,20 +256,113 @@ pacf(xd,30, main="PACF: DXCM Closing Difference")
 Box.test(xd, type="Ljung-Box")
 ```
 
-Box test now indicates $x_d$ is stationary, however we can see that the variance of $x_d$ is time-varying, as such, we **cannot** apply ARIMA alone. To address that, let's obtain the return series of our original series $y_t=\frac{x_t-x_{t-1}}{x_{t-1}}$, and apply GARCH model on the return series:
+Box test now indicates $x_d$ is stationary, however we can see that the variance of $x_d$ is time-varying, as such, we **cannot** apply ARIMA alone. To address that, we use ARIMA to fit the original series $x$, then apply GARCH model on the ARIMA residue to estimate conditional variance and obtain the final prediction by integrating GARCH results into the ARIMA prediction. To obtain the best ARIMA model, we run the following procedure to identify the optimal order $(p,d,q)$:
+
+
+```{r}
+# procedure to get best ARIMA order
+get.best.arima <- function(x.ts, maxord = c(1,1,1))  # don't change any of this code
+{
+  best.aic <- 1e8
+  n <- length(x.ts)
+  for (p in 0:maxord[1]) for(d in 0:maxord[2]) for(q in 0:maxord[3]) 
+  {
+    fit <- arima(x.ts, order = c(p,d,q))
+    fit.aic <- -2 * fit$loglik + (log(n) + 1) * length(fit$coef)
+    if (fit.aic < best.aic) 
+    {
+      best.aic <- fit.aic
+      best.fit <- fit
+      best.model <- c(p,d,q) 
+    }
+  }
+  list(best.aic, best.fit, best.model)
+}
+# model selection
+x.best = get.best.arima(x, maxord = c(2,2,2))[[3]]
+```
+
+the best order of ARIMA is $(0,1,0)$:
+
+```{r, echo=F}
+# fit ARIMA(0,1,0)
+x.arima <- arima(x, order=x.best)
+# Model Diagnostics: Residuals
+summary(x.arima$resid)
+Box.test(x.arima$resid, type="Ljung-Box")
+
+par(mfrow=c(2,2))
+  plot(x.arima$resid, col="blue", main="Residual Series")
+  hist(x.arima$resid, col="gray", main="Residuals")
+  acf(x.arima$resid , ylim=c(0,0.2), main="ACF: Residual Series")
+  #pacf(x.arima$resid, ylim=c(-0.4,1), main="PACF: Residual Series")
+  acf(x.arima$resid^2 , ylim=c(0,0.2), main="ACF: Squared Residual Series")
+
+```
+
+we can see although the ACF of residual indicates insignificant autocorrelation, ACF of squared residual showed otherwise. Let further check the in-sample fit of the model:
+
 
 ```{r, echo=FALSE}
-y <- xd/x[2:length(x)]
-par(mfrow=c(2,2))
-hist(y, breaks="FD", col="blue",main="Histogram DXCM Return")
-ts.plot(y, main="DXCM Return")
-acf(y, 30, main="ACF : DXCM Return")
-pacf(y,30, main="PACF: DXCM Return")
-# box test
-Box.test(y, type="Ljung-Box")
-y.garch <- garchFit(y~garch(1,1), trace=F)
-#plot(y.garch)
+# Model Performance Evaluation: In-Sample Fit
+  par(mfrow=c(1,1))
+  plot.ts(x, col="red", 
+        main="Original vs ARIMA(0,1,0) Estimated Series with Resdiauls",
+        ylab="Original and Estimated Values", pch=1, lty=2)
+  par(new=T)
+  plot.ts(fitted(x.arima),col="blue",axes=T,xlab="",ylab="", lty=1) 
+  leg.txt <- c("Original Series", "Estimated Series", "Residuals")
+  legend("topleft", legend=leg.txt, lty=c(1,1,2), 
+         col=c("red","blue","green"), bty='n', cex=1)
+  par(new=T)
+  plot.ts(x.arima$resid,axes=F,xlab="",ylab="",col="green",
+           lty=2, pch=1, col.axis="green")
+  axis(side=4, col="green")
+  mtext("Residuals", side=4, line=2,col="green")
 ```
+
+the in-sample fit closely follow the original series. However the residuals demonstrate varying variance, we apply GARCH model on the residuals to correct the prediction uncertainty:
+
+
+```{r, echo=FALSE}
+steps <- 36
+# standard error of the residuals from the ARIMA model
+se.resid <- sqrt(x.arima$sigma2) # or stdev(x.arima.residuals)
+# fit garch for the residual
+x.res.garch <- garchFit(x.arima$residuals~garch(1,1), trace=F)
+# forecast with GARCH model
+x.res.garch.fcast <- predict(x.res.garch, n.ahead = steps)
+# forecast with ARIMA model
+forecast <- forecast.Arima(x.arima, h=steps)
+# standard errors from the ARIMA model (for prediction)
+se.arima <- (forecast$upper[,2]-forecast$mean)/1.96
+# forecasting conditional standard errors from GARCH
+cse.garch <- x.res.garch.fcast$standardDeviation
+# put the conditional SE back to ARIMA SE
+se.combine <- se.arima / se.resid * cse.garch
+forecast$mean <- forecast$mean + x.res.garch.fcast$meanForecast 
+forecast$lower[,2] <- forecast$mean - 1.96 * se.combine
+forecast$lower[,1] <- forecast$mean - 1.645 * se.combine
+forecast$upper[,2] <- forecast$mean + 1.96 * se.combine
+forecast$upper[,1] <- forecast$mean + 1.645 * se.combine
+
+# chart overlay
+plot(forecast,
+     main="36-Step Ahead Forecast and Original & Estimated Series",
+     xlab="Time Period", 
+     ylab="Original, Estimated, and Forecasted Values",
+     xlim=c(2100,2368),ylim=c(50,100),lty=2,lwd=1.5)
+par(new=T)
+plot.ts(fitted(x.arima),col="blue", 
+        lty=2, lwd=2, xlab="",ylab="",xlim=c(2100,2368),ylim=c(50,100))
+leg.txt <- c("Original Series", "Estimated Series", "Forecast")
+legend("topright", legend=leg.txt, lty=c(2,2,1), lwd=c(1,2,2),
+       col=c("black","blue","blue"), bty='n', cex=1)
+```
+
+The prediction of $ARIMA(0,1,0)$ gives a flat prediction, due to the fact that the model doesn't have AR and MA coefficient. Thus the prediction is equivalent to a random walk without noise, which has become a constant of the last observation. However, after correct the prediction variance, we find the confidence interval is reduced compared with that given by ARIMA model. Finally, the ACF of squared residuals of GARCH model shows the variance of residual is no long varying by time.
+
+![Alt text](part2acf2.jpeg "ACF")
 
 
 ## Part 3
