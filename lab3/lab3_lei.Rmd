@@ -518,11 +518,36 @@ par(mfrow=c(1,1))
   mtext("Production", side=4, line=2,col="green")
 ```
 
+### Task 1 - Reproduce AP analysis
 
+One naive way to analyze the data is to build a simple regression model between oil production and pric, and check the significance of the regression coefficient. For example:
+
+```{r}
+m0 <- lm(Price~Production, data=gasOil)
+summary(m0)
+```
+
+we can see the p-value for the effect of oil production on price here is 0.575, which is insignificant. And with this number we can claim that there is “evidence of no statistical correlation” between oil production and gas prices.
+
+However, with further model diagnostics, we can see this model violate basically all assumptions of linear regression:
+
+```{r,echo=F}
+plot(m0)
+```
+
+we can see that the residue is heterskodastic, non-normal, and the dependent variable does not have zero-conditional mean. In fact, if we add a nonlinear term in the model, we can have significant result:
+
+```{r}
+gasOil$Production2 <- gasOil$Production^2
+m0 <- lm(Price~Production+Production2, data=gasOil)
+summary(m0)
+```
+
+here the model indicates that when oil production increases the gas price will drop and the effect is statistically significant. 
+
+To sumarize, the production series is very volatile, for regression analysis it's better to smooth it with moving average window. In addition, we can see before ~1985, when the oil production went up gas price is decreasing. After that, oil production keeps decreasing and gas price is slightly decreasing as well before ~2000. Then the price start trending up again. Therefore it is unconvincing to simply say the two are not correlated. The analysis needs to be put under certain context and time period. One way to investigate is through instrumental variable, with some variable that is irreleavant with gas price, but is highly correlated with oil production.
 
 ### Task 2 - Forecast the inflation-adjusted gas prices from 2012 to 2016
-
-
 
 ```{r,echo=F}
 par(mfrow=c(2,2))
@@ -607,4 +632,4 @@ legend("topleft", legend=leg.txt, lty=c(2,2,1), lwd=c(1,2,2),
 
 Finally, the ACF of squared residuals of GARCH model shows the variance of residual is no long varying by time.
 
-![Alt text](part3acf2.jpeg "ACF")
+![Alt text](part4acf2.jpeg "ACF")
