@@ -23,23 +23,23 @@ library(e1071)
 # approach, to answer a set of questions interested by a philanthropist group.
 # You will also need to test hypotheses using these questions.
 #
-# The philanthropist group hires a think tank to examine the relationship between 
-# the house values and neighborhood characteristics. For instance, they are 
-# interested in the extent to which houses in neighbhorhood with desirable 
-# features command higher values. They are specifically interested in environmental 
-# features, such as proximity to water body (i.e. lake, river, or ocean) or 
+# The philanthropist group hires a think tank to examine the relationship between
+# the house values and neighborhood characteristics. For instance, they are
+# interested in the extent to which houses in neighbhorhood with desirable
+# features command higher values. They are specifically interested in environmental
+# features, such as proximity to water body (i.e. lake, river, or ocean) or
 # air quality of a region.
 #
-# The think tank has collected information from tens of thousands of 
-# neighborhoods throughout the United States. They hire your group as 
-# contractors, and you are given a small sample and selected variables 
+# The think tank has collected information from tens of thousands of
+# neighborhoods throughout the United States. They hire your group as
+# contractors, and you are given a small sample and selected variables
 # of the original data set collected to conduct an initial, proof-of-concept
-# analysis. Many variables, in their original form or transfomed forms, that 
-# can explain the house values are included in the dataset. Analyze each of 
-# these variables as well as different combinations of them very carefully 
-# and use them (or a subset of them), in its original or transformed version, 
-# to build a linear regression model and test hypotheses to address the 
-# questions. Also address potential (statistical) issues that may be 
+# analysis. Many variables, in their original form or transfomed forms, that
+# can explain the house values are included in the dataset. Analyze each of
+# these variables as well as different combinations of them very carefully
+# and use them (or a subset of them), in its original or transformed version,
+# to build a linear regression model and test hypotheses to address the
+# questions. Also address potential (statistical) issues that may be
 # casued by omitted variables.
 #
 # Data Set Field Descriptions
@@ -47,28 +47,28 @@ library(e1071)
 # crimeRate_pc: crime rate per capital, measured by number of crimes per
 #               1000 residents in neighborhood
 #
-# nonRetailBusiness: the proportion of non-retail business acres per 
+# nonRetailBusiness: the proportion of non-retail business acres per
 #                    neighborhood
 #
-# withWater: the neighborhood within 5 miles of a water body 
-#           (lake, river, etc); 1 if true and 0 otherwise 
+# withWater: the neighborhood within 5 miles of a water body
+#           (lake, river, etc); 1 if true and 0 otherwise
 #
 # ageHouse: proportion of house built before 1950
 #
 # distanceToCity: distances to the nearest city (measured in miles)
 #
-# pupilTeacherRatio: average pupil-teacher ratio in all the schools 
-#                    in the neighborhood 
+# pupilTeacherRatio: average pupil-teacher ratio in all the schools
+#                    in the neighborhood
 #
 # pctLowIncome: percentage of low income household in the neighborhood
 #
-# homeValue: median price of single-family house in the neighborhood 
+# homeValue: median price of single-family house in the neighborhood
 #            (measured in dollars)
 #
-# pollutionIndex: pollution index, scaled between 0 and 100, with 0 
-#                 being the best and 100 being the worst (i.e. uninhabitable) 
+# pollutionIndex: pollution index, scaled between 0 and 100, with 0
+#                 being the best and 100 being the worst (i.e. uninhabitable)
 #
-# nBedRooms: average number of bed rooms in the single family houses 
+# nBedRooms: average number of bed rooms in the single family houses
 #            in the neighborhood
 #
 #########################################################################
@@ -114,7 +114,7 @@ sum(hv_df$distanceToHighway==24)
 
 # There are 104 out of 400 observations that are 24.
 
-# Let's see what we can do about some of the worst variables for skew 
+# Let's see what we can do about some of the worst variables for skew
 # and kurtosis
 kurtosis(log(hv_df$crimeRate_pc))  # changes kurtosis from 33.9 -> -1.0
 skew(log(hv_df$crimeRate_pc))      # changes skew from 4.96 -> 0.434
@@ -132,7 +132,7 @@ skew(log(hv_df$ageHouse))
 hv_df$crimeRate_pc_log <- log(hv_df$crimeRate_pc)
 hv_df$distanceToCity_log <- log(hv_df$distanceToCity)
 hv_df$pctLowIncome_log <- log(hv_df$pctLowIncome)
-hv_df$houseAge_log <- ifelse(hv_df$ageHouse < 100, log(100-hv_df$ageHouse), 
+hv_df$houseAge_log <- ifelse(hv_df$ageHouse < 100, log(100-hv_df$ageHouse),
                              log(100-hv_df$ageHouse+1e6))
 hv_df$homeValue_log <- log(hv_df$homeValue)
 hv_df$pollutionIndex_log <- log(hv_df$pollutionIndex)
@@ -140,7 +140,7 @@ hv_df$pollutionIndex_log <- log(hv_df$pollutionIndex)
 # take the log of the inverse. The ratio becomes the teacher:pupil ratio
 hv_df$teacherPupilRatio_log <- log(1) - log(hv_df$pupilTeacherRatio)
 
-# attempt to get some of the fine structure at the very beginning of the 
+# attempt to get some of the fine structure at the very beginning of the
 # distribution for crimeRate_pc. The distribution is highly right skewed
 ## ---- histogram_of_crimerate ----
 par(mfrow=c(2,1))
@@ -155,9 +155,9 @@ histBxp(hv_df$crimeRate_pc_log, breaks=50, main="Histogram of Log Crime Rate per
 # The distribution of non-retail business acres appears uniform with
 # a very large spike at 0.18
 par(mfrow=c(1,1))
-histBxp(hv_df$nonRetailBusiness, breaks=50, 
+histBxp(hv_df$nonRetailBusiness, breaks=50,
      main="Frequency of Non-retail Business Acres",
-     xlab="Business Acres", 
+     xlab="Business Acres",
      width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_agehouse ----
@@ -167,7 +167,7 @@ histBxp(hv_df$ageHouse, breaks=50,
      main="Histogram of Proportion of Houses Built Before 1950",
      xlab="Proportion of Houses Built Before 1950",
      width=0.01, boxcol="lightblue")
-# we transform the variable by subtracting from 100 to obtain the 
+# we transform the variable by subtracting from 100 to obtain the
 # percentage of houses built after 1950. Then we take the log. The
 # transformation is done in the transformation section; this is the
 # histogram plot
@@ -194,8 +194,8 @@ histBxp(hv_df$distanceToCity_log, breaks=50,
 # the distances set to 24. Otherwise the distribution appears normal-like
 par(mfrow=c(1,1))
 histBxp(hv_df$distanceToHighway, breaks=50,
-     main="Distance To Highway", 
-     xlab="Distance to Highway", 
+     main="Distance To Highway",
+     xlab="Distance to Highway",
      width=0.01, boxcol="lightblue")
 
 ## ---- histogram_teacherpupil ----
@@ -204,11 +204,11 @@ par(mfrow=c(2,1))
 # at just over 23 pupils per teacher.
 histBxp(hv_df$pupilTeacherRatio, breaks=50,
      main="Frequency of Pupil to Teacher Ratio",
-     xlab="Pupils per Teacher", 
+     xlab="Pupils per Teacher",
      width=0.01, boxcol="lightblue")
 histBxp(hv_df$teacherPupilRatio_log, breaks=50,
         main="Frequency of Log(Teacher to Pupil) Ratio",
-        xlab="Log(Teachers per Pupil)", 
+        xlab="Log(Teachers per Pupil)",
         width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_lowincome ----
@@ -216,13 +216,13 @@ histBxp(hv_df$teacherPupilRatio_log, breaks=50,
 # distribution with a long tail towards the higher percentage of low
 # income houses.
 par(mfrow=c(2,1))
-histBxp(hv_df$pctLowIncome, breaks=50, 
+histBxp(hv_df$pctLowIncome, breaks=50,
      main="Frequency of Low Income Housing",
-     xlab="Percentage of Low Income Houses", 
+     xlab="Percentage of Low Income Houses",
      width=0.01, boxcol="lightblue")
-histBxp(hv_df$pctLowIncome_log, breaks=50, 
+histBxp(hv_df$pctLowIncome_log, breaks=50,
      main="Frequency of Log(% Low Income Housing)",
-     xlab="Log(Percentage) of Low Income Houses", 
+     xlab="Log(Percentage) of Low Income Houses",
      width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_homevalue ----
@@ -234,7 +234,7 @@ histBxp(hv_df$homeValue, breaks=50,
      xlab="Home Value", width=0.01, boxcol="lightblue")
 histBxp(hv_df$homeValue_log, breaks=50,
      main="Histogram of Log(Home Values) per Neighborhood",
-     xlab="Log(Home Value)", 
+     xlab="Log(Home Value)",
      width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_pollution ----
@@ -242,18 +242,18 @@ histBxp(hv_df$homeValue_log, breaks=50,
 par(mfrow=c(2,1))
 histBxp(hv_df$pollutionIndex, breaks=30,
      main="Distribution of Pollution Index Across Neighborhoods",
-     xlab="Pollution Index", 
+     xlab="Pollution Index",
      width=0.01, boxcol="lightblue")
 histBxp(hv_df$pollutionIndex_log, breaks=30,
         main="Distribution of Pollution Index Across Neighborhoods",
-        xlab="Pollution Index", 
+        xlab="Pollution Index",
         width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_nbeds ----
 # The nBedRooms variable looks mostly normal
 histBxp(hv_df$nBedRooms, breaks=30,
         main="Distribution of Number of Bedrooms",
-        xlab="Number of Bedrooms", 
+        xlab="Number of Bedrooms",
         width=0.01, boxcol="lightblue")
 
 ## ---- matrixplot_variables ----
@@ -283,10 +283,10 @@ panel.cor <- function(x, y, digits=2, prefix = "", cex.cor, ...)
 
 # Matrix of histogram, correlations and scatterplots for all the
 # variables in the data set
-pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness + withWater + 
+pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness + withWater +
       ageHouse + distanceToCity_log + distanceToHighway +
-        teacherPupilRatio_log + pctLowIncome_log + pollutionIndex + nBedRooms, 
-      data=hv_df, upper.panel=panel.smooth, 
+        teacherPupilRatio_log + pctLowIncome_log + pollutionIndex + nBedRooms,
+      data=hv_df, upper.panel=panel.smooth,
       lower.panel=panel.cor, diag.panel=panel.hist,
       main="All Variables Scatterplot Matrix")
 
@@ -308,7 +308,7 @@ pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness + withWater +
 # Crime rate shows a moderate correlation with home values
 #
 # Next I want to take a look at the DistanceToHighway variable and filter
-# out the encoding issue. I'm going to look at 2 different approaches - 
+# out the encoding issue. I'm going to look at 2 different approaches -
 # removing those entries that have the encoding issue which reduces the
 # data set by 25%, and to recompute the 24 mile entries as the mean
 # of the DistanceToHighway with the 24 mile values included.
@@ -338,7 +338,7 @@ stargazer(hv_df, type="text", keep=c(19,20))
 
 ## ---- disthiway_comparison_latex ----
 # compare the summary statistics of the filtered and raw data set
-stargazer(hv_df_hiway_filtered, type="latex", header=FALSE, 
+stargazer(hv_df_hiway_filtered, type="latex", header=FALSE,
           title='Filtered Dataset', keep=c(6))
 stargazer(hv_df, type="latex", header=FALSE,
           title='Full Dataset', keep=c(19,20))
@@ -348,8 +348,8 @@ stargazer(hv_df, type="latex", header=FALSE,
 # the distances set to 24. Otherwise the distribution appears normal-like
 par(mfrow=c(1,1))
 histBxp(hv_df$distanceToHighway, breaks=50,
-        main="Distance To Highway", 
-        xlab="Distance to Highway", 
+        main="Distance To Highway",
+        xlab="Distance to Highway",
         width=0.01, boxcol="lightblue")
 
 ## ---- disthiway_histograms ----
@@ -388,10 +388,10 @@ hist(hv_df$distanceToCity,
 # Matrix of histogram, correlations and scatterplots for all the
 # variables in the data set
 par(mfrow=c(1,1))
-pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness +  
+pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness +
         distanceToCity_log + distanceToHighway_modCity +
-        pupilTeacherRatio + pctLowIncome_log + pollutionIndex, 
-      data=hv_df, upper.panel=panel.smooth, 
+        pupilTeacherRatio + pctLowIncome_log + pollutionIndex,
+      data=hv_df, upper.panel=panel.smooth,
       lower.panel=panel.cor, diag.panel=panel.hist,
       main="Scatterplot Matrix of Transformed Environmental Variables")
 
@@ -400,7 +400,7 @@ pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness +
 # Environment factors first
 par(mfrow=c(2,2))
 # There appears to be a relationships between pollution index and homeValue
-qplot(pollutionIndex, homeValue_log, data=hv_df, 
+qplot(pollutionIndex, homeValue_log, data=hv_df,
       geom=c("point", "smooth"), main='',
       xlab='Pollution Index', ylab='log(Home Value)')
 
@@ -433,7 +433,7 @@ qplot(distanceToHighway_modCity, homeValue_log, data=hv_df,
       xlab='Log(DistanceToHighway)', ylab='log(Home Value)')
 
 # There seems to be a linear relationship between pupilTeachRation and homeValue
-qplot(pupilTeacherRatio, homeValue_log, data=hv_df, 
+qplot(pupilTeacherRatio, homeValue_log, data=hv_df,
       geom=c("point", "smooth"), main='',
       xlab='Pupil:Teacher Ratio', ylab='log(Home Value)')
 
@@ -441,7 +441,7 @@ qplot(pupilTeacherRatio, homeValue_log, data=hv_df,
 par(mfrow=c(2,1))
 # Home Attribute Values
 # There is a strong linear correlation between homeValue and nBedRooms
-qplot(nBedRooms, homeValue_log, data=hv_df, 
+qplot(nBedRooms, homeValue_log, data=hv_df,
       geom=c("point", "smooth"), main='',
       xlab='Number Bedrooms', ylab='log(Home Value)')
 
@@ -486,7 +486,7 @@ coeftest(model5, vcov=vcovHC)
 vif(model5)
 
 # these coefficients don't pass the VIF test and add too much bias because of
-# their collinearity. 
+# their collinearity.
 
 model6 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
                withWater, data=hv_df)
@@ -526,8 +526,8 @@ coeftest(model11, vcov=vcovHC)
 vif(model11)
 summary(model11)
 
-# interactions 
-model12 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log + 
+# interactions
+model12 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
                 pctLowIncome_log*crimeRate_pc_log, data=hv_df)
 coeftest(model12, vcov=vcovHC)
 vif(model12)
@@ -537,7 +537,6 @@ summary(model12)
 
 
 # Use robust standard errors in the table output
-
 
 ## ---- model_comparison_text ----
 stargazer(model1, model2, model3, model6, model10, model11,
@@ -550,7 +549,7 @@ stargazer(model1, model2, model3, model6, model10, model11,
                                "Pollution Index",
                                "Close To Water",
                                "Distance To Highway",
-                               "log(Teacher:Pupil Ratio"))
+                               "log(Teacher:Pupil Ratio)"))
 
 ## ---- model_comparison_latex ----
 stargazer(model1, model2, model3, model6, model10, model11,
@@ -563,4 +562,8 @@ stargazer(model1, model2, model3, model6, model10, model11,
                                "Pollution Index",
                                "Close To Water",
                                "Distance To Highway",
-                               "log(Teacher:Pupil Ratio"))
+                               "log(Teacher:Pupil Ratio)"))
+
+## ---- model_diagnostics ----
+par(mfrow=c(2,2))
+plot(model11)

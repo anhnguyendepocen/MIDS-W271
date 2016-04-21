@@ -2,7 +2,7 @@
 title: "MIDS W271-4 Lab 3"
 author: "Lei Yang, Ron Cordell"
 date: "April 23, 2016"
-output: 
+output:
   pdf_document:
     includes:
       in_header: header.tex
@@ -61,7 +61,7 @@ The _distanceToHighway_ variable shows the concern with coding error in this his
 
 \newpage
 
-The _pupilTeacherRatio_ variable shows a roughly uniform distribution except for a large number of occurances of the value _23_, which must be a more common classroom size. 
+The _pupilTeacherRatio_ variable shows a roughly uniform distribution except for a large number of occurances of the value _23_, which must be a more common classroom size.
 
 ```{r histogram_teacherpupil, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=8}
 ```
@@ -103,7 +103,7 @@ The next page brings all the variables into a single matrix for comparison and t
 
 ### DistanceToHighway Variable Detailed Examination
 
-We saw previously that the _distanceToHighway_ variable looked suspicious so in this section we look at how to address a possible coding issue. The number of rows in the dataset that have the _distanceToHighway_ variable as 24 is 25% of the dataset. Removing these rows would remove a significant amount of data, reducing _N=400_ to _N=296_. We examine two strategies and compare them to the row-removal option: replacing values of 24 with the mean of the filtered values or with the value of _distanceToCity_. 
+We saw previously that the _distanceToHighway_ variable looked suspicious so in this section we look at how to address a possible coding issue. The number of rows in the dataset that have the _distanceToHighway_ variable as 24 is 25% of the dataset. Removing these rows would remove a significant amount of data, reducing _N=400_ to _N=296_. We examine two strategies and compare them to the row-removal option: replacing values of 24 with the mean of the filtered values or with the value of _distanceToCity_.
 
 The following two tables compare the summaries of the filtered dataset with the summaries of the dataset with transformed values. Comparing the _distanceToHighway_meanMod_ and _distanceToHighway_cityMod_ shows that the latter is much closer to the values of the filtered dataset. This indicates that replacing the value of 24 with the value of _distanceToCity_ is a reasonable transformation to deal with the coding issue. The idea is further substantiated by the proposition that the distance to a city is usually not greater than the distance to a highway as cities are generally located on highways.  
 
@@ -152,19 +152,19 @@ The linear regression models are built towards increasing saturation where colli
 The saturated regression model for environmental variables is expressed as:
 
 $$log(homeValue) = 15.5784 + 0.5128 log(TeacherPupilRatio) + 0.1193 distanceToHighway$$
-$$ + 0.025 withWater - 0.0192 log(crimeRate_pc) - 0.4238 log(lowIncomeHousing)$$
+$$ + 0.025 withWater - 0.0192 log(crimeRate\_pc) - 0.4238 log(lowIncomeHousing)$$
 
 **Teacher:Pupil Ratio**: more teachers per pupil is correlated with increased home values. However it is not possible to tell if an area with higher value homes can afford to hire more teachers or if more teachers makes for better schools which attract more affluent families. A 1% increase in the Teacher to pupil ration will result in a 1/2% increase in the home values, holding the other variables constant.
 
-**Distance To Highway** Interestingly, a longer distance to highway is correlated with higher home values. An increase of 1 mile in the distance results in the increase of about 1/10% of the average value of a home, controlling for the other variables in the model.
+**Distance To Highway**: Interestingly, a longer distance to highway is correlated with higher home values. An increase of 1 mile in the distance results in the increase of about 1/10% of the average value of a home, controlling for the other variables in the model.
 
-**Close To Water** On average, home values increase by .025% if the home is within 5 miles of water when controlling for other variables in the model. While this result is statistically significant it is not practically significant. One can imagine that homes actually "on the water" have higher values than those that aren't. However the practical significance of being close to a body of water is small.
+**Close To Water**: On average, home values increase by .025% if the home is within 5 miles of water when controlling for other variables in the model. While this result is statistically significant it is not practically significant. One can imagine that homes actually "on the water" have higher values than those that aren't. However the practical significance of being close to a body of water is small.
 
-**Crime Rate** Unsurprisingly, crime rate has a negative effect on average home value. An increase of 1% in the crime rate results in a reduction in average home value of about .02%, controlling for the other variables. This may not seem like very much, but crime rates tend to be very low in the areas with the highest home values. A doubling of the crime rate from 1 per 1000 to 2 per 1000 results in a 100% increase in the crime rate and a 2% reduction in price. Because this is a non-linear relationship we can't take extrapolate much further but the general idea is apparent.
+**Crime Rate**: Unsurprisingly, crime rate has a negative effect on average home value. An increase of 1% in the crime rate results in a reduction in average home value of about .02%, controlling for the other variables. This may not seem like very much, but crime rates tend to be very low in the areas with the highest home values. A doubling of the crime rate from 1 per 1000 to 2 per 1000 results in a 100% increase in the crime rate and a 2% reduction in price. Because this is a non-linear relationship we can't take extrapolate much further but the general idea is apparent.
 
-**Low Income Housing** Low income housing is an obvious correlator for average home values. However we can imagine that while the numeric averages are reduded as lower income housing increases in an area the effect of higher concentrations of low income housing tends to pull down home values within a certain distance. Controlling for the other variables in the model, an increase of 1% in low income housing can decrease average home values in the area by about 1/2%.
+**Low Income Housing**: Low income housing is an obvious correlator for average home values. However we can imagine that while the numeric averages are reduded as lower income housing increases in an area the effect of higher concentrations of low income housing tends to pull down home values within a certain distance. Controlling for the other variables in the model, an increase of 1% in low income housing can decrease average home values in the area by about 1/2%.
 
-**Distance To City** It is interesting that _distanceToCity_ did not factor into our models. It is highly correlated with the _crimeRate_pc_ variable in that the closer to the city the higher the crime rate.
+**Distance To City**: It is interesting that _distanceToCity_ did not factor into our models. It is highly correlated with the _crimeRate_pc_ variable in that the closer to the city the higher the crime rate.
 
 This model only reflects the correlations of a small group of environment variables on the average price of a home. It is not a model to predict the average price of a home given these factors. This model gives some ideas about how some factors could affect the average values of homes in the area, however. Some biases in the model include the correlation between the low income housing and home values. It is difficult to use that observation as an indicator for other things like the type of people in the area, the extent to which social services are offered, or how the type of housing interacts with crime rate.
 
@@ -175,12 +175,17 @@ This model only reflects the correlations of a small group of environment variab
 ```
 \elandscape
 
+Finally we examine the residual plots to diagnose the selected model, we can see that the assumptions of normality, zero-condition mean, and homoskedasticity can be held for the model.
+
+```{r model_diagnostics, echo=FALSE, warning=FALSE, fig.width=6.5, fig.height=8.0}
+```
+
 ```{r setup2, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
 knitr::read_chunk('lab3-part2.R')
 ```
 
-```{r part2_setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```{r part2_setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide}
 ```
 
 # Part 2 - Modeling and Forecasting a Real-World Macroeconomic Financial Time Series
@@ -196,7 +201,7 @@ In order to better understand the time series and analyze the possible underlyin
 
 The first set of plots reveals:
 
-* The series is non-stationary; it has a persistent upward trend, interrupted by shocks; 
+* The series is non-stationary; it has a persistent upward trend, interrupted by shocks;
 * There are shocks at approximately time periods 500, 1200, 1800 and 2200;
 * There appears to be seasonality in the series;
 * The autocorrelation shows a very slight decay over the entire correlagram;
@@ -283,7 +288,7 @@ Since the residuals of the ARIMA(0,1,0) model shows time-dependency we fit a GAR
 
 The complete ARIMA(0,1,0)-GARCH(1,1) model looks like:
 
-$$y_{t}-y_{t-1} = .010761 + .153134 \epsilon_{t-1}^{2}+ .805974 \hat{h}_{t-1}$$ 
+$$y_{t}-y_{t-1} = .010761 + .153134 \epsilon_{t-1}^{2}+ .805974 \hat{h}_{t-1}$$
 
 All of these models exhibit time-dependent residuals so we fit a GARCH model to the residuals of the resulting model
 \newpage
@@ -366,7 +371,7 @@ Garch model
 
 ```{r part3_garch, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
-```{r part3_garch_residual_plots_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```{r part3_garch_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
 
 ## Forecast
@@ -428,7 +433,7 @@ The AP analysis states that there is no statistically significant correlation be
 
 The regression on the _change in production_ and the _change in price_ shows a marginally significant p-value but only at the $\alpha=0.1$ level. The standard error shows that the estimate range crosses 0 so it is not distinguishable from 0.  As expected all regression coefficients are not distinguishable from 0 and this reproduces the AP analysis conclusion that there is no statistically significate correlation between the two variables.
 
-### Critique 
+### Critique
 
 Comparing _Price_ and _Production_ in this way does not take into account the dependency on time. Each variable has it's own seasonal effects and its own volatility. A more careful analysis would compare the variables as time series and analyse the lagged relationships and seasonal factors.
 
@@ -471,7 +476,3 @@ Using the `auto.arima` function in R we obtain an estimated ARIMA(1,1,3) model w
 \newpage
 
 Estimating the GARCH model on the residuals of the ARIMA(1,1,3) model we obtain a GARCH(1,1) model. The residuals of the GARCH model are shown and exhibit no correlation or time dependency and the Box-Ljung test indicates we are unable to reject the null hypothesis of an IID residual series.
-
-
-
-
