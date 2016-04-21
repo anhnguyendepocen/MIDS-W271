@@ -132,9 +132,13 @@ skew(log(hv_df$ageHouse))
 hv_df$crimeRate_pc_log <- log(hv_df$crimeRate_pc)
 hv_df$distanceToCity_log <- log(hv_df$distanceToCity)
 hv_df$pctLowIncome_log <- log(hv_df$pctLowIncome)
-hv_df$ageHouse_log <- log(hv_df$ageHouse)
+hv_df$houseAge_log <- ifelse(hv_df$ageHouse < 100, log(100-hv_df$ageHouse), 
+                             log(100-hv_df$ageHouse+1e6))
 hv_df$homeValue_log <- log(hv_df$homeValue)
 hv_df$pollutionIndex_log <- log(hv_df$pollutionIndex)
+
+# take the log of the inverse. The ratio becomes the teacher:pupil ratio
+hv_df$teacherPupilRatio_log <- log(1) - log(hv_df$pupilTeacherRatio)
 
 # attempt to get some of the fine structure at the very beginning of the 
 # distribution for crimeRate_pc. The distribution is highly right skewed
@@ -147,21 +151,30 @@ histBxp(hv_df$crimeRate_pc_log, breaks=50, main="Histogram of Log Crime Rate per
      xlab="Log(Crimes per 1000)", width=0.01,
      boxcol='lightblue')
 
-## ---- histogram_of_nonbizretail_agehouse ----
+## ---- histogram_of_nonbizretail ----
 # The distribution of non-retail business acres appears uniform with
 # a very large spike at 0.18
-par(mfrow=c(2,1))
+par(mfrow=c(1,1))
 histBxp(hv_df$nonRetailBusiness, breaks=50, 
      main="Frequency of Non-retail Business Acres",
      xlab="Business Acres", 
      width=0.01, boxcol="lightblue")
 
+## ---- histogram_of_agehouse ----
+par(mfrow=c(2,1))
 # The Proportion of Houses built before 1950 is extremely right-skewed
-# with an almost uniform left tail but a transformation doesn't seem to help
 histBxp(hv_df$ageHouse, breaks=50,
      main="Histogram of Proportion of Houses Built Before 1950",
      xlab="Proportion of Houses Built Before 1950",
      width=0.01, boxcol="lightblue")
+# we transform the variable by subtracting from 100 to obtain the 
+# percentage of houses built after 1950. Then we take the log. The
+# transformation is done in the transformation section; this is the
+# histogram plot
+histBxp(hv_df$houseAge_log, breaks=50,
+        main="Histogram of Log(%) Houses Built After 1950",
+        xlab="Log(Percentage) of Houses Built After 1950",
+        width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_distcity ----
 # Distance to City distribution is highly right skewed with a long
@@ -176,21 +189,27 @@ histBxp(hv_df$distanceToCity_log, breaks=50,
      xlab="Log(Distance To City)",
      width=0.01, boxcol="lightblue")
 
-## ---- histogram_of_disthiway_pupils ----
+## ---- histogram_of_disthiway ----
 # The distance to highway appears to have a coding error with many of
 # the distances set to 24. Otherwise the distribution appears normal-like
-par(mfrow=c(2,1))
+par(mfrow=c(1,1))
 histBxp(hv_df$distanceToHighway, breaks=50,
      main="Distance To Highway", 
      xlab="Distance to Highway", 
      width=0.01, boxcol="lightblue")
 
+## ---- histogram_teacherpupil ----
+par(mfrow=c(2,1))
 # The distribution is more or less uniform except for one large peak
 # at just over 23 pupils per teacher.
 histBxp(hv_df$pupilTeacherRatio, breaks=50,
      main="Frequency of Pupil to Teacher Ratio",
      xlab="Pupils per Teacher", 
      width=0.01, boxcol="lightblue")
+histBxp(hv_df$teacherPupilRatio_log, breaks=50,
+        main="Frequency of Log(Teacher to Pupil) Ratio",
+        xlab="Log(Teachers per Pupil)", 
+        width=0.01, boxcol="lightblue")
 
 ## ---- histogram_of_lowincome ----
 # Low income housing distribution appears as a skewed-right normal-like
@@ -266,10 +285,10 @@ panel.cor <- function(x, y, digits=2, prefix = "", cex.cor, ...)
 # variables in the data set
 pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness + withWater + 
       ageHouse + distanceToCity_log + distanceToHighway +
-      pupilTeacherRatio + pctLowIncome_log + pollutionIndex + nBedRooms, 
+        teacherPupilRatio_log + pctLowIncome_log + pollutionIndex + nBedRooms, 
       data=hv_df, upper.panel=panel.smooth, 
       lower.panel=panel.cor, diag.panel=panel.hist,
-      main="Data Set Variable Scatterplot Matrix")
+      main="All Variables Scatterplot Matrix")
 
 ## ---- disthiway_detail ----
 # The pairs grid shows strong correlations between pollution index
@@ -314,13 +333,15 @@ hv_df$distanceToHighway_modCity <- ifelse(hv_df$distanceToHighway<24,
 
 ## ---- disthiway_comparison_text ----
 # compare the summary statistics of the filtered and raw data set
-stargazer(hv_df_hiway_filtered, type="text")
-stargazer(hv_df, type="text")
+stargazer(hv_df_hiway_filtered, type="text", keep=c(6))
+stargazer(hv_df, type="text", keep=c(19,20))
 
 ## ---- disthiway_comparison_latex ----
 # compare the summary statistics of the filtered and raw data set
-stargazer(hv_df_hiway_filtered, type="latex", header=FALSE, title='Filtered Dataset')
-stargazer(hv_df, type="latex", header=FALSE, title='Full Dataset')
+stargazer(hv_df_hiway_filtered, type="latex", header=FALSE, 
+          title='Filtered Dataset', keep=c(6))
+stargazer(hv_df, type="latex", header=FALSE,
+          title='Full Dataset', keep=c(19,20))
 
 ## ---- histogram_of_disthiway2 ----
 # The distance to highway appears to have a coding error with many of
@@ -368,11 +389,11 @@ hist(hv_df$distanceToCity,
 # variables in the data set
 par(mfrow=c(1,1))
 pairs(homeValue_log ~ crimeRate_pc_log + nonRetailBusiness +  
-        ageHouse + distanceToCity_log + distanceToHighway_modCity +
-        pupilTeacherRatio + pctLowIncome_log + pollutionIndex + nBedRooms, 
+        distanceToCity_log + distanceToHighway_modCity +
+        pupilTeacherRatio + pctLowIncome_log + pollutionIndex, 
       data=hv_df, upper.panel=panel.smooth, 
       lower.panel=panel.cor, diag.panel=panel.hist,
-      main="Scatterplot Matrix of Transformed Variables")
+      main="Scatterplot Matrix of Transformed Environmental Variables")
 
 ## ---- multivariate-relationships-env1 ----
 # General Analysis of Overall Trends (from the pairs grid)
@@ -498,11 +519,29 @@ coeftest(model10, vcov=vcovHC)
 vif(model10)
 summary(model10)
 
+model11 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log +
+                distanceToHighway_modCity + withWater +
+                teacherPupilRatio_log, data=hv_df)
+coeftest(model11, vcov=vcovHC)
+vif(model11)
+summary(model11)
+
+# interactions 
+model12 <- lm(homeValue_log ~ pctLowIncome_log + crimeRate_pc_log + 
+                pctLowIncome_log*crimeRate_pc_log, data=hv_df)
+coeftest(model12, vcov=vcovHC)
+vif(model12)
+summary(model12)
+# the collinearity of these variables is very high and the interaction
+# term has a extremely high VIF calculation.
+
+
 # Use robust standard errors in the table output
 
 
 ## ---- model_comparison_text ----
-stargazer(model1, model2, model3, model6, model10,
+stargazer(model1, model2, model3, model6, model10, model11,
+          digits=4,
           type="text", header=FALSE, df=FALSE,
           title="Regression Model Comparison",
           dep.var.labels = c("log(Home Values)"),
@@ -510,10 +549,12 @@ stargazer(model1, model2, model3, model6, model10,
                                "log(Crime Rate)",
                                "Pollution Index",
                                "Close To Water",
-                               "Distance To Highway"))
+                               "Distance To Highway",
+                               "log(Teacher:Pupil Ratio"))
 
 ## ---- model_comparison_latex ----
-stargazer(model1, model2, model3, model6, model10,
+stargazer(model1, model2, model3, model6, model10, model11,
+          digits=4,
           type="latex", header=FALSE, df=FALSE,
           title="Regression Model Comparison",
           dep.var.labels = c("log(Home Values)"),
@@ -521,4 +562,5 @@ stargazer(model1, model2, model3, model6, model10,
                                "log(Crime Rate)",
                                "Pollution Index",
                                "Close To Water",
-                               "Distance To Highway"))
+                               "Distance To Highway",
+                               "log(Teacher:Pupil Ratio"))

@@ -103,24 +103,24 @@ stargazer(fit.df, type="latex", header=FALSE,
 
 ## ---- part3_plots_ts1 ----
 par(mfrow=c(2,2))
-plot.ts(ts1, main="Search Activity Through 2010", 
+plot.ts(ts1, main="Search Activity 2004-2010", 
         ylab="Value", xlab="Year")
-hist(ts1, main="Histogram of Search Activity Through 2010",
+hist(ts1, main="Histogram of Search 2004-2010",
      xlab="Value", breaks=50)
-acf(ts1, main="Autocorrelation of Search Activity",
+acf(ts1, main="ACF of Search Activity",
     xlab="Lag")
-pacf(ts1, main="Partial Autocorrelation of Search Activity",
+pacf(ts1, main="PACF of Search Activity",
      xlab="Lag")
 
 ## ---- part3_plots_ts2 ----
 par(mfrow=c(2,2))
-plot.ts(ts2, main="Search Activity from 2011", 
+plot.ts(ts2, main="Search Activity 2011-2016", 
         ylab="Value", xlab="Year")
-hist(ts2, main="Histogram of Search Activity from 2011",
+hist(ts2, main="Histogram of Search 2011-2916",
      xlab="Value", breaks=50)
-acf(ts2, main="Autocorrelation of Search Activity",
+acf(ts2, main="ACF of Search Activity",
     xlab="Lag")
-pacf(ts2, main="Partial Autocorrelation of Search Activity",
+pacf(ts2, main="PACF of Search Activity",
      xlab="Lag")
 
 # peristent trend, different periods of seasonality

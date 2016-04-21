@@ -12,7 +12,24 @@ library(fGarch)
 library(tseries)
 library(forecast)
 library(stargazer)
+library(xtable)
 
+# A function to output nice summaries into xtable
+summaryfunction= function (x){
+  if( is.numeric(x)!=TRUE) {stop("Supplied X is not numeric")}
+  mysummary = data.frame(
+    "Min." =as.numeric( min(x)),
+    "1st Qu." = quantile(x)[2],
+    "Median" = median(x),
+    "Mean" = mean(x),
+    "3rd Qu." = quantile(x)[4],
+    "Max." = max(x),
+    row.names=""
+    
+  )
+  names(mysummary) = c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max.")
+  return( mysummary )
+}
 #########################################################################
 #
 # Lab 3, Part 4 - Forecast Inflation Adjusted Gas Price 
@@ -88,7 +105,7 @@ mtext("Inlflation-Adjusted Dollars", line=2, side=4, col="blue")
 # on the other. So let's look at things that way.
 
 ## ---- part4_plot_qplot ----
-qplot(Price, Production, data=gasOil,
+qplot(Production, Price, data=gasOil,
       geom=c("point", "smooth"),
       main="Gas Price and Oil Production",
       xlab="Gas Price US Dollars",
@@ -147,7 +164,7 @@ legend("topleft", legend=leg.txt, lty=c(1,1),
 
 ## ---- part4_differenced_qplot ----
 
-qplot(price_diff, prod_diff, data=scaled.diffs,
+qplot(prod_diff, price_diff, data=scaled.diffs,
       geom=c("point", "smooth"),
       main="Normalized Change in Gas Price and Oil Production",
       xlab="Change in Gas Price",
@@ -207,28 +224,65 @@ acf(ts_price, main="Autocorrelation of Gas Price",
 pacf(ts_price, main="Partial Autocorrelation of Price",
      xlab="Lag", lag.max = 100)
 
-summary(ts_price)
-
 # Observations:
 # The Gas Price series doesn't seem to have persistent trends but is more
 # like a random walk. The mean is not 0 so we will have to de-mean the series.
 # The ACF indicates an AR() process
 
-## ---- part4_model_price ----
-price.ar <- ar(ts_price, method='mle')
-price.ar$order
-price.arima <- auto.arima(ts_price, max.p=12, max.q=12,
-                          max.d=2, max.P=12, max.Q=12,
-                          max.D=1, seasonal = T)
-summary(price.arima)
+## ---- part4_pricets_summary ----
+xtable(summaryfunction(ts_price), caption=c('Price Series Statistical Summary'),
+       digits=3)
 
+## ---- part4_price_diff_plots ----
+par(mfrow=c(2,2))
+plot.ts(delta.price, main="Price Change Time Series", 
+        ylab="Value", xlab="Year")
+hist(delta.price, main="Histogram of Price Change Series",
+     xlab="Value", breaks=50)
+acf(delta.price, main="Acf of Price Change",
+    xlab="Lag",lag.max = 100)
+pacf(delta.price, main="PACF of Price Change",
+     xlab="Lag", lag.max = 100)
+
+
+## ---- part4_model_price ----
+# we open the model parameters up a bit to consider higher
+# order models, especially for seasonality.
+price.arima <- auto.arima(ts_price)
+
+stargazer(summary(price.arima))
+xtable(confint(price.arima), caption='ARIMA Confidence Intervals')
+
+## ---- part4_arima_residuals_plot ----
+par(mfrow=c(2,2))
 plot.ts(price.arima$residuals, main="ARIMA Residuals", 
         ylab="Value", xlab="Year")
+hist(price.arima$residuals, main="Histogram of Residuals",
+     xlab="Value", breaks=50)
+acf(price.arima$residuals, main="Acf of Residuals",
+    xlab="Lag",lag.max = 100)
+acf(price.arima$residuals^2, main="ACF of Squared Residuals",
+     xlab="Lag", lag.max = 100)
 
-price.garch <- garchFit(~arma(3,3)+garch(5,1), trace=F)
+## ---- part4_price_garch_model ----
+
+price.garch <- garchFit(price.arima$residuals~garch(1,1), trace=F)
+res.garch <- price.garch@residuals
+
 summary(price.garch)
 
-price.garch2 <- garch(price.arima$residuals, order=c(0,3), trace=F)
+## ---- part4_garch_residuals_plot ----
+par(mfrow=c(2,2))
+plot.ts(res.garch, main="GARCH Residuals", 
+        ylab="Value", xlab="Year")
+hist(res.garch, main="Histogram of GARCH Residuals",
+     xlab="Value", breaks=50)
+acf(res.garch, main="Acf of GARCH Residuals",
+    xlab="Lag",lag.max = 100)
+acf((res.garch)^2, main="ACF of GARCH Squared Residuals",
+    xlab="Lag", lag.max = 100)
+
+
 
 plot.ts(price.garch2$residuals, main="ARMA-GARCH Residuals", 
         ylab="Value", xlab="Year")
