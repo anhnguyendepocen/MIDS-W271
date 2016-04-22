@@ -16,29 +16,29 @@ library(fGarch)
 
 #########################################################################
 #
-# Lab 3, Part 3 - Forecast the Web Search Activity for global Warming 
+# Lab 3, Part 3 - Forecast the Web Search Activity for global Warming
 #
-# Imagine that you group is part of a data science team in an appreal 
-# company. One of its recent products is Global-Warming T-shirts. The 
-# marketing director expects that the demand for the t-shirts tends to 
+# Imagine that you group is part of a data science team in an appreal
+# company. One of its recent products is Global-Warming T-shirts. The
+# marketing director expects that the demand for the t-shirts tends to
 # increase when global warming issues are reported in the news. As such,
-# the director asks your group to forecast the level of interest in 
+# the director asks your group to forecast the level of interest in
 # global warming in the news. The dataset given to your group captures
 # the relative web search activity for the phrase, “global warming” over
 # time. For the purpose of this exercise, ignore the units reported in
 # the data as they are unimportant and irrelevant. Your task is to
 # produce the weekly forecast for the next 3 months for the relative web
-# search activity for global warming. For the purpose of this exercise, 
+# search activity for global warming. For the purpose of this exercise,
 # treat it as a 12-step ahead forecast.
 #
 # The dataset for this exercise is provided in globalWarming.csv. Use
 # only models and techniques covered in the course (up to lecture 13).
 # Note that one of the modeling issues you may have to consider is
 # whether or not to use the entire series provided in the data set.
-# Your choice will have to be clearly explained and supported with 
+# Your choice will have to be clearly explained and supported with
 # empirical evidence. As in other parts of the lab, the general
 # instructions in the Instruction Section apply.
-# 
+#
 #########################################################################
 ## ---- part3_loaddata ----
 ts.csv_load <- read.csv('lab3_data/globalWarming.csv')
@@ -81,11 +81,11 @@ plot.ts(ts.full, main="Search Activity", xlab="Year", ylab="Value",
 tail(ts.csv_load[1:365,])
 head(ts.csv_load[366:630,])
 tail(ts.csv_load[366:630,])
-ts1 <- ts(ts.csv_load[1:417,]$data.science,   start=c(2004, 1), frequency = 52)
-ts2 <- ts(ts.csv_load[418:630,]$data.science, start=c(2011, 1), frequency = 52)
+ts1 <- ts(ts.csv_load[1:365,]$data.science,   start=c(2004, 1), frequency = 52)
+ts2 <- ts(ts.csv_load[366:630,]$data.science, start=c(2011, 1), frequency = 52)
 
-Box.test(ts1, type="Ljung-Box")                                          
-Box.test(ts2, type="Ljung-Box") 
+Box.test(ts1, type="Ljung-Box")
+Box.test(ts2, type="Ljung-Box")
 
 ## ---- part3_compare_ts_text -----
 fit.df <- data.frame(cbind(ts1, ts2))
@@ -93,7 +93,7 @@ class(df)
 stargazer(fit.df, type="text", header=FALSE,
          title="Comparative Statistics", digits=2,
          covariate.labels = c("2004-2010","2011-2016"))
-                     
+
 ## ---- part3_compare_ts_latex -----
 fit.df <- data.frame(cbind(ts1, ts2))
 class(df)
@@ -103,7 +103,7 @@ stargazer(fit.df, type="latex", header=FALSE,
 
 ## ---- part3_plots_ts1 ----
 par(mfrow=c(2,2))
-plot.ts(ts1, main="Search Activity 2004-2010", 
+plot.ts(ts1, main="Search Activity 2004-2010",
         ylab="Value", xlab="Year")
 hist(ts1, main="Histogram of Search 2004-2010",
      xlab="Value", breaks=50)
@@ -114,16 +114,16 @@ pacf(ts1, main="PACF of Search Activity",
 
 ## ---- part3_plots_ts2 ----
 par(mfrow=c(2,2))
-plot.ts(ts2, main="Search Activity 2011-2016", 
+plot.ts(ts2, main="Search Activity 2011-2016",
         ylab="Value", xlab="Year")
-hist(ts2, main="Histogram of Search 2011-2916",
+hist(ts2, main="Histogram of Search 2011-2016",
      xlab="Value", breaks=50)
 acf(ts2, main="ACF of Search Activity",
     xlab="Lag")
 pacf(ts2, main="PACF of Search Activity",
      xlab="Lag")
 
-# peristent trend, different periods of seasonality
+# persistent trend, different periods of seasonality
 # ACF is a slow roll-off indicating a possible ARMA() process
 # Take the difference of the series to remove the trend
 
@@ -133,7 +133,7 @@ summary(ts2.diff)
 
 ## ---- part3_plots_ts2_diff ----
 par(mfrow=c(2,2))
-plot.ts(ts2.diff, main="Differenced Search Activity", 
+plot.ts(ts2.diff, main="Differenced Search Activity",
         ylab="Value", xlab="Year")
 hist(ts2.diff, main="Histogram of Differenced Search Activity",
      xlab="Value", breaks=50)
@@ -154,11 +154,11 @@ summary(ts2.seasonal)
 
 ## ---- part3_seasonal_plot ----
 par(mfrow=c(2,2))
-plot.ts(ts2.seasonal, main="Seasonality in Search Activity", 
+plot.ts(ts2.seasonal, main="Seasonality in Search Activity",
         ylab="Value", xlab="Year")
 hist(ts2.seasonal, main="Histogram of Seasonality",
      xlab="Value", breaks=50)
-acf(ts2.seasonal, main="ACF ofSeasonality",
+acf(ts2.seasonal, main="ACF of Seasonality",
     xlab="Lag",lag.max = 100)
 pacf(ts2.seasonal, main="PACF of Seasonality",
      xlab="Lag", lag.max = 100)
@@ -171,7 +171,7 @@ t(confint(ts2.fit))
 
 ## ---- part3_model_plot_ts ----
 par(mfrow=c(1,1))
-plot.ts(ts2, col='cyan', 
+plot.ts(ts2, col='cyan',
         main='Time Series vs. SARIMA(1,1,1)(0,1,1)[52] Model',
         ylab='Original and Estimated Values', xlab='Period',
         pch=1, lty=1)
@@ -189,7 +189,7 @@ legend("topleft", legend=leg.txt, lty=c(2,1), col=c("cyan","navy","green"),
 
 ## ---- part3_model_residual_plots ----
 par(mfrow=c(2,2))
-plot.ts(ts2.fit$residuals, main="SARIMA Residuals", 
+plot.ts(ts2.fit$residuals, main="SARIMA Residuals",
         ylab="Price", xlab="Interval")
 hist(ts2.fit$residuals, main="Histogram of SARIMA Residuals",
      xlab="log(Price)", breaks=50)
@@ -209,13 +209,13 @@ g <- garch(ts2.fit$residuals, order=c(1,1), trace=FALSE)
 
 res <- ts2.garch@residuals
 par(mfrow=c(2,2))
-plot.ts(res, main="GARCH(1,1) Residuals", 
+plot.ts(res, main="GARCH(1,1) Residuals",
         ylab="Price", xlab="Interval")
 hist(res, main="Histogram GARCH(1,1) Residuals",
      xlab="log(Price)", breaks=50)
 acf(res, main="ACF GARCH(1,1) Residuals",
     xlab="Lag", na.action = na.omit)
-acf(res, main="ACF GARCH(1,1) Residuals Squared",
+acf(res^2, main="ACF GARCH(1,1) Residuals Squared",
     xlab="Lag", na.action = na.omit)
 
 ## ---- part3_forecast ----
@@ -232,7 +232,7 @@ se.arima <- (forecast$upper[,2]-forecast$mean)/1.96
 cse.garch <- ts2.garch.fcast$standardDeviation
 # put the conditional SE back to ARIMA SE
 se.combine <- se.arima / se.resid * cse.garch
-forecast$mean <- forecast$mean + ts2.garch.fcast$meanForecast 
+forecast$mean <- forecast$mean + ts2.garch.fcast$meanForecast
 forecast$lower[,2] <- forecast$mean - 1.96 * se.combine
 forecast$lower[,1] <- forecast$mean - 1.645 * se.combine
 forecast$upper[,2] <- forecast$mean + 1.96 * se.combine
@@ -243,11 +243,11 @@ forecast$upper[,1] <- forecast$mean + 1.645 * se.combine
 par(mfrow=c(1,1))
 plot(forecast,
      main="12-Step Ahead Forecast and Original & Estimated Series",
-     xlab="Time Period", 
+     xlab="Time Period",
      ylab="Original and Forecasted Values",
      lty=2,lwd=1.5)
 par(new=T)
-#plot.ts(fitted(ts2.fit),axes=F, col="blue", 
+#plot.ts(fitted(ts2.fit),axes=F, col="blue",
 #        lty=1, lwd=2, xlab="",ylab="",xlim=c(2011,2016))
 leg.txt <- c("Original Series", "Forecast")
 legend("topleft", legend=leg.txt, lty=c(2,2,1), lwd=c(1,2,2),

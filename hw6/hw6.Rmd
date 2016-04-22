@@ -1,311 +1,242 @@
 ---
-title: "W271 HW6"
+title: "W271 - Applied Regression and Time Series Analysis - HW6"
 author: "Subhashini R., Lei Yang, Ron Cordell"
-date: "March 16, 2016"
+date: "March 17, 2016"
 output: pdf_document
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 # Exercise 1:
+a). Discuss the mean and variance functions and how the similarities and differences from those we studied in classical linear model
 
-**a. Discuss the mean and variance functions and how the similarities and differences from those we studied in classical linear model**
-
-The Mean Function for a time series is given by:
-
-$$u_{x}(t) = E(x_{t}) = \int_{-\infty}^{\infty}x_{t}f_{t}(x_{t})dx_{t}$$
-
-The mean function is dependent on time $t$ and the expectation is over the ensemble of time series $x_{t}$ derived from the underlying process.
-
-A process is stationary in the mean if the mean function is a constant in time.
-
-The Variance Function for a time series is given by:
-
-$$\sigma_{x}^{2}(t) = E(x_{t}-\mu_{x}(t))^{2} = \int_{-\infty}^{\infty}(x_{t}-\mu_{x}(t))^{2}f_{t}(x_{t})dx_{t}$$
-
-Once again the expectation is for the ensemble of all time series.
-
-A series is stationary in variance if ther variance function is constant in time.
-
-**b. Define strict and weak stationarity**
-
-A time series is strictly stationary if the joint distributions $F(x_{t_{1}},...,x_{t_{n}})$ and $F(x_{t_{1}+m},...,x_{t_{n}+m})$ are the same $\forall t_{1},...,t_{n}$ and $m$. In other words, the distribution is the same regardless of the time period.
-
-A time series is weakly stationary if it is mean and variance stationary and the autocovariance $Cov(x_{t},x_{t+k})$ depends on the time placement $k$.
+b). Define strict and weak statonarity
 
 # Exercise 2:
-
-**a. Generate a zero-drift random walk model using 500 simulation**  
-**b. Provide the descriptive statistics of the simulated realizations. The descriptive statistics should include the mean, standard deviation, 25th, 50th, and 75th quantiles, minimum, and maximum**  
-**c. Plot the time-series plot of the simulated realizations**  
-**d. Plot the autocorrelation graph**  
-**e. Plot the partial autocorrelation graph** 
+a). Generate a zero-drift random walk model using 500 simulation
 
 ```{r}
-# set seed for repeatability
-set.seed(1)
-
-# 500 random normal "draws"
-x1 <- w <- rnorm(500)
-
-# create the lagged variable
-for (i in 2:500) x1[i] <- x1[i-1] + w[i]
-
-# let's see what we've got
-str(x1)
-str(w)
-
-# summary stats
-summary(x1)
-sd(x1)
-
-# put our graphs in the same page/display canvas
-plot.ts(x1, col='blue', 
-        xlab='Simulated Time Period',
-        ylab='Simulated Variable Units')
-title('(2c) Fig 1: Random Walk Zero Drift Simulated Series')
+# white noise with sample size 500
+w <- rnorm(500,0,1)
+# random walk
+rw <- cumsum(w)
 ```
-```{r}
-acf(x1, main="", 
-    xlab='Lag')
-title('(2d) Fig 2: ACF of the Random Walk Zero Drift Simulated Series')
+
+b). Provide the descriptive statistics of the simulated realizations. The descriptive statistics should include the mean, standard deviation, 25th, 50th, and 75th quantiles, minimum, and maximum
+
+```{r echo=FALSE}
+Q <- quantile(rw, probs=c(0.25, 0.5, 0.75))
 ```
+
+| Statistic        | Value      |
+| ------------- |-------------:|
+| mean    | **``r sprintf("%.4f", mean(rw))``** | 
+| standard deviation      | **``r sprintf("%.4f", sd(rw))``**      |
+| 25% Q | **``r sprintf("%.4f", Q[1])``**  |
+| 50% Q | **``r sprintf("%.4f", Q[2])``**  |
+| 75% Q | **``r sprintf("%.4f", Q[3])``**  |
+| minimum | **``r sprintf("%.4f", min(rw))``**  |
+| maximum | **``r sprintf("%.4f", max(rw))``**  |
+
+c). Plot the time-series plot of the simulated realizations
 ```{r}
-pacf(x1, main="", 
-     xlab='Lag')
-title('(2e) Fig 3: PACF of the Random Walk Zero Drift Simulated Series')
+plot.ts(rw, ylab='Simulated Value', main='Zero-drift Random Walk')
+```
+
+d). Plot the autocorrelation graph
+```{r}
+acf(rw, main="Correlogram of Zero-drift Random Walk")
+
+```
+
+e). Plot the partial autocorrelation graph
+```{r}
+pacf(rw, main="Partial Autocorrelation of Zero-drift Random Walk")
 
 ```
 
 # Exercise 3:
-
-**a. Generate a random walk with drift model using 500 simulation, with the drift = 0.5**  
-**b. Provide the descriptive statistics of the simulated realizations. The descriptive statistics should include the mean, standard deviation, 25th, 50th, and 75th quantiles, minimum, and maximum**  
-**c. Plot the time-series plot of the simulated realizations**  
-**d. Plot the autocorrelation graph**  
-**e. Plot the partial autocorrelation graph**  
-
+a). Generate arandom walk with drift model using 500 simulation, with the drift = 0.5
 ```{r}
-# we'll use our same series w
-x2 <- w
-
-# set the drift to 0.5
-drift <- 0.5
-
-# calculated the lagged variable with the drift
-for (i in 2:500) x2[i] <- drift + x2[i-1] + w[i]
-
-# summary stats
-summary(x2)
-sd(x2)
-
-# put our graphs in the same page/display canvas
-plot.ts(x2, col='blue', 
-        xlab='Simulated Time Period',
-        ylab='Simulated Variable Units')
-title('(3c) Fig 1: Random Walk 0.5 Drift Simulated Series')
+w <- rnorm(500,0,1)+0.5
+rw <- cumsum(w)
 ```
-```{r}
-acf(x1, main="", 
-    xlab='Lag')
-title('(3d) Fig 2: ACF of the Random Walk 0.5 Drift Simulated Series')
+
+b). Provide the descriptive statistics of the simulated realizations. The descriptive statistics should include the mean, standard deviation, 25th, 50th, and 75th quantiles, minimum, and maximum
+```{r echo=FALSE}
+# descriptive stats
+
+Q <- quantile(rw, probs=c(0.25, 0.5, 0.75))
+
 ```
+
+| Statistic        | Value      |
+| ------------- |-------------:|
+| mean    | **``r sprintf("%.4f", mean(rw))``** | 
+| standard deviation      | **``r sprintf("%.4f", sd(rw))``**      |
+| 25% Q | **``r sprintf("%.4f", Q[1])``**  |
+| 50% Q | **``r sprintf("%.4f", Q[2])``**  |
+| 75% Q | **``r sprintf("%.4f", Q[3])``**  |
+| minimum | **``r sprintf("%.4f", min(rw))``**  |
+| maximum | **``r sprintf("%.4f", max(rw))``**  |
+
+c). Plot the time-series plot of the simulated realizations
 ```{r}
-pacf(x1, main="", 
-     xlab='Lag')
-title('(3e) Fig 3: PACF of the Random Walk 0.5 Drift Simulated Series')
+plot.ts(rw, ylab='Simulated Value', main='0.5-drift Random Walk')
+```
+
+d). Plot the autocorrelation graph
+```{r}
+acf(rw, main="Correlogram of 0.5-drift Random Walk")
+```
+
+e). Plot the partial autocorrelation graph
+```{r}
+pacf(rw, main="Partial Autocorrelation of 0.5-drift Random Walk")
 ```
 
 # Exercise 4:
-
 Use the series from INJCJC.csv
 
-**a. Load the data and examine the basic structure of the data using str(), dim(), head(), and tail() functions**  
-
+a). Load the data and examine the basic structure of the data using str(), dim(), head(), and tail() functions
 ```{r}
-# load the INJCJC.csv data into a dataframe
-df <- read.csv('INJCJC.csv')
-
-# examine the structure
-str(df)
-
-# examine the dimensions of the data set
-dim(df)
-
-# examine the first 20 rows
-head(df,20)
-
-#examine the last 20 rows
-tail(df,20)
-```
-
-**b. Convert the variables INJCJC into a time series object frequency=52, start=c(1990,1,1), end=c(2014,11,28). Examine the converted data series**  
-
-```{r}
-INJCJC <- ts(df$INJCJC, frequency=52, start=c(1990,1,1), end=c(2014,11,28))
-summary(INJCJC)
+setwd("~/Desktop/W271Data")
+INJCJC <- read.csv('INJCJC.csv')
 str(INJCJC)
+dim(INJCJC)
+head(INJCJC)
+tail(INJCJC)
 ```
 
-**c. Define a variable using the command INJCJC.time<-time(INJCJC)**  
-
+b). Convert the variables INJCJC into a time series object frequency=52, start=c(1990,1,1), end=c(2014,11,28). Examine the converted data series
 ```{r}
-INJCJC.time <- time(INJCJC)
-str(INJCJC)
+injcjc <- ts(data=INJCJC$INJCJC, frequency=52, start=c(1990,1,1), end=c(2014,11,28))
+injcjc4 <- ts(data=INJCJC$INJCJC4, frequency=52, start=c(1990,1,1), end=c(2014,11,28))
+#plot.ts(injcjc4, main='', ylab='INJCJC4')
 ```
 
-**d. Using the following command to examine the first 10 rows of the data. Change the parameter to examine different number of rows of data**
-
-    head(cbind(INJCJC.time, INJCJC),10)
-    
+c). Define a variable using the command INJCJC.time<-time(INJCJC)
 ```{r}
-head(cbind(INJCJC.time, INJCJC), 20)
-tail(cbind(INJCJC.time, INJCJC), 20)
+INJCJC.time<-time(injcjc)
 ```
 
-**e1. Plot the time series plot of INJCJC. Remember that the graph must be well labelled.**  
-
+d). Using the following command to examine the first 10 rows of the data. Change the parameter to examine different number of rows of data
 ```{r}
-plot.ts(INJCJC, col='blue',
-        xlab='Year (Weekly Interval)',
-        ylab='Price',
-        main='Plot of Time Series INJCJC')
+head(cbind(INJCJC.time, injcjc),18)
 ```
 
-**e2. Plot the histogram of INJCJC. What is shown and not shown in a histogram? How do you decide the number of bins used?**
-
+e1). Plot the time series plot of INJCJC. Remember that the graph must be well labelled.
 ```{r}
-hist(INJCJC, breaks=80, main='Histogram of Time Series INJCJC',
-     xlab='INJCJC Price')
+plot.ts(injcjc, main='', ylab='INJCJC')
 ```
 
-The histogram shows the relative frequency of values in the series, but it does not show the time dependency of those values, and therefore their relationship to each other as a function of time. I decide the number of bins to use to show a reasonable amount of detail in the variation of the histogram while giving a good indication of the distribution of values.
-
-**e3. Plot the autocorrelation graph of INJCJC series**  
-
+e2). Plot the histogram of INJCJC. What is shown and not shown in a histogram? How do you decide the number of bins used?
 ```{r}
-acf(INJCJC, main='ACF of the INJCJC Time Series')
-
+hist(injcjc, breaks=20)
 ```
 
-**e4. Plot the partial autocorrelation graph of INJCJC series** 
+the histogram contains no temperal information in the series, it is impossible to know the dynamics over time from histogram
 
+e3). Plot the autocorrelation graph of INJCJC series
 ```{r}
-pacf(INJCJC, main='ACF of the INJCJC Time Series')
+acf(injcjc, main='Autocorrelation graph of INJCJC')
 ```
-\newpage
 
-**e5. Plot a 3x3 Scatterplot Matrix of correlation against lag values**  
 
-```{r fig.width=6.5, fig.height=8}
-lag.plot(INJCJC, 9, main='Correlation vs. Lag Plot Matrix of INJCJC')
+e4). Plot the partial autocorrelation graph of INJCJC series
+```{r}
+pacf(injcjc, main='Partial autocorrelation graph of INJCJC')
 ```
-\newpage
 
-**f1. Generate two symmetric Moving Average Smoothers. Choose the number of moving average terms such that one of the smoothers is very smooth and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.**
-
-```{r fig.width=6.5, fig.height=8}
-# The time series is weekly, we we can try a moving window 
-# average of 5 that would smooth across months
-INJCJC.ma5 <- filter(INJCJC, sides=2, rep(1,5)/5)
-
-# This symmetric MA filter would smooth across 2 years - 
-# the 1 year MA smoother is much less smooth
-INJCJC.ma105 <- filter(INJCJC, sides=2, rep(1,105)/105)
-plot(INJCJC, type='p', pch=20, col='black', xlab='Year',
-     main='INJCJC Time Series Symmetric Moving Average', ylab='Price')
-lines(INJCJC.ma5, col='cyan', lty=1, lwd=1.5)
-lines(INJCJC.ma105, col='red', lty=1, lwd=2.0)
-legend('topleft',legend=c('Time Series',
-                          'Moving Average (5) Monthly Smoothed',
-                          'Moving Average (105) 2-Year Smoothed'),
-       lty=c(1,1,1), col=c('black','cyan','red'), bty='n', cex=1,
-       merge=TRUE, bg=336)
+e5). Plot a 3x3 Scatterplot Matrix of correlation against lag values
+```{r warning=FALSE}
+lag.plot(injcjc, lags=9, layout=c(3,3), 
+         diag=TRUE, disg.col="red",
+         main="Autocorrelation between INJCJC and its Own Lags")
 ```
-\newpage
 
-**f2. Generate two regression smoothers, one being a cubic trend regression and the other being a periodic regression. Plot the smoothers and the original series in one graph.**
 
-```{r fig.width=6.5, fig.height=8}
-wk <- INJCJC.time - mean(INJCJC.time)
-wk2 <- wk^2
-wk3 <- wk^3
-cs <- cos(.29*pi*wk)
-sn <- sin(.29*pi*wk)
-INJCJC.cubic <- lm(INJCJC ~ wk + wk2 + wk3, na.action=NULL)
-INJCJC.periodic <- lm(INJCJC ~ wk + wk2 + wk3 + cs + sn, na.action=NULL)
-plot(INJCJC, type='p', pch=20, col='black', xlab='Year',
-     main='INJCJC Time Series Cubic Polynomial and Periodic Smoothing', ylab='Price')
-lines(fitted(INJCJC.cubic), lty=1, lwd=1.5, col='cyan')
-lines(fitted(INJCJC.periodic), lty=1, lwd=2.0, col='red')
-legend('topleft',legend=c('Time Series',
-                          'Cubic Regression Smoothed',
-                          'Periodic Smoothed'),
-       lty=c(1,1,1), col=c('black','cyan','red'), bty='n', cex=1,
-       merge=TRUE, bg=336)
+f1). Generate two symmetric Moving Average Smoothers. Choose the number of moving average terms such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.
+```{r}
+ma3 = filter(injcjc, sides=2, rep(1,18)/18)
+ma18 = filter(injcjc, sides=2, rep(1,118)/118)
+plot(injcjc, main="", pch=4, lty=5, lwd=1, xlab="Year")
+lines(ma3, lty=1, lwd=1.5, col="green")
+lines(ma18, lty=1, lwd=1.5, col="blue")
+leg.txt <- c("Original Series", "18-Point Symmetric Moving Average", "118-Point Symmetric Moving Average")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), col=c("black","green","blue"),
+       bty='n', cex=1, merge = TRUE, bg=336)
 ```
-\newpage
 
-**f3. Generate kernel smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.**
 
-```{r fig.width=6.5, fig.height=8}
-plot(INJCJC, type='p', pch=20, col='black', xlab='Year',
-     main='INJCJC Time Series Kernel Smoothing', ylab='Price')
-lines(ksmooth(time(INJCJC), INJCJC, "normal", bandwidth=5/52), lty=1, lwd=1.5, col='cyan')
-lines(ksmooth(time(INJCJC), INJCJC, "normal", bandwidth=2), lty=1, lwd=2.0, col='red')
-legend('topleft',legend=c('Time Series',
-                          'Bandwidth 5/52',
-                          'Bandwidth 2'),
-       lty=c(1,1,1), col=c('black','cyan','red'), bty='n', cex=1,
-       merge=TRUE, bg=336)
+f2). Generate two regression smoothers, one being a cubic trend regression and the other being a periodic regression. Plot the smoothers and the original series in one graph.
+```{r}
+wk = time(injcjc) - mean(time(injcjc))  
+wk2 = wk^2 
+wk3 = wk^3
+cs = cos(0.8*pi*wk)  
+sn = sin(0.8*pi*wk)
+reg1 = lm(injcjc~wk + wk2 + wk3, na.action=NULL)
+reg2 = lm(injcjc~wk + wk2 + wk3 + cs + sn, na.action=NULL)
+plot(injcjc, main="Regression Smoothing", 
+     pch=4, lty=5, lwd=1, xlab="Year")
+lines(fitted(reg1), lty=1, lwd=1.5, col="green")
+lines(fitted(reg2), lty=1, lwd=1.5, col="blue")
+# Add Legend
+leg.txt <- c("Original Series", "Cubic Trend Regression Smoothing", "Periodic Regression Smoothing")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), col=c("black","green","blue"),
+       bty='n', cex=1, merge = TRUE, bg=336)
 ```
-\newpage
-
-**f4. Generate two nearest neighborhood smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.**
 
 
-```{r fig.width=6.5, fig.height=8}
-plot(INJCJC, type='p', pch=20, col='black', xlab='Year',
-     main='INJCJC Time Series Nearest Neighbor Smoothing', ylab='Price')
-lines(supsmu(time(INJCJC), INJCJC, span=0.01), lty=1, lwd=1.5, col='cyan')
-lines(supsmu(time(INJCJC), INJCJC, span=0.2), lty=1, lwd=2.0, col='red')
-legend('topleft',legend=c('Time Series',
-                          'Span 0.01',
-                          'Span 0.2'),
-       lty=c(1,1,1), col=c('black','cyan','red'), bty='n', cex=1,
-       merge=TRUE, bg=336)
+f3). Generate kernel smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.
+```{r}
+plot(injcjc, pch=4, lty=5, lwd=1, xlab="Year")
+lines(ksmooth(time(injcjc), injcjc, "normal", bandwidth=5/104),lty=1, lwd=1.5, col="green")
+lines(ksmooth(time(injcjc), injcjc, "normal", bandwidth=2),lty=1, lwd=1.5, col="blue")
+# Add Legend
+leg.txt <- c("Original Series", "Kernel Smoothing: bandwidth=5/104", "Kernel Smoothing: bandwidth=2")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), col=c("black","green","blue"),
+       bty='n', cex=1, merge = TRUE, bg=336)
+
 ```
-\newpage
-
-**f5. Generate two LOWESS smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.**
 
 
-
-```{r fig.width=6.5, fig.height=8}
-plot(INJCJC, type='p', pch=20, col='black', xlab='Year',
-     main='INJCJC Time Series Lowess Smoothing', ylab='Price')
-lines(lowess(time(INJCJC), INJCJC, f=0.02), lty=1, lwd=1.5, col='cyan')
-lines(lowess(time(INJCJC), INJCJC, f=0.25), lty=1, lwd=2.0, col='red')
-legend('topleft',legend=c('Time Series',
-                          'Span 0.01',
-                          'Span 0.2'),
-       lty=c(1,1,1), col=c('black','cyan','red'), bty='n', cex=1,
-       merge=TRUE, bg=336)
+f4). Generate two nearest neighborhood smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.
+```{r}
+plot(injcjc, main="Nearest Neighborhood Smoothing", 
+     pch=4, lty=5, lwd=1, xlab="Year")
+lines(supsmu(time(injcjc), injcjc, span=.01),lty=1, lwd=1.5, col="green")
+lines(supsmu(time(injcjc), injcjc, span=.2),lty=1, lwd=1.5, col="blue")
+# Add Legend
+leg.txt <- c("Original Series", "NN Smoothing: bandwidth=.01", "NN Smoothing: bandwidth=.2")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), col=c("black","green","blue"),
+       bty='n', cex=1, merge = TRUE, bg=336)
 ```
-\newpage
 
-**f6. Generate two spline smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.**
-
-```{r fig.width=6.5, fig.height=8}
-plot(INJCJC, type='p', pch=20, col='black', xlab='Year',
-     main='INJCJC Time Series Spline Smoothing', ylab='Price')
-lines(smooth.spline(time(INJCJC), INJCJC, spar=0.05), lty=1, lwd=1.5, col='cyan')
-lines(smooth.spline(time(INJCJC), INJCJC, spar=0.75), lty=1, lwd=2.0, col='red')
-legend('topleft',legend=c('Time Series',
-                          'Spar 0.01',
-                          'Spar 0.2'),
-       lty=c(1,1,1), col=c('black','cyan','red'), bty='n', cex=1,
-       merge=TRUE, bg=336)
+f5). Generate two LOWESS smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.
+```{r}
+plot(injcjc, main="LOWESS Smoothing", pch=4, lty=5, lwd=1, xlab="Year")
+lines(lowess(injcjc, f=.02),lty=1, lwd=1.5, col="green")
+lines(lowess(injcjc, f=.23),lty=1, lwd=1.5, col="blue")
+# Add Legend
+leg.txt <- c("Original Series", "LOWESS Smoothing: bandwidth=.02", "LOWESS Smoothing: bandwidth=.23")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), col=c("black","green","blue"),
+       bty='n', cex=1, merge = TRUE, bg=336)
 ```
+
+f6). Generate two spline smoothers. Choose the smoothing parametrs such that one of the smoothers is very smoother and the other one can trace through the dynamics of the series. Plot the smoothers and the original series in one graph.
+```{r}
+plot(injcjc, main="Smoothing Splines", pch=4, lty=5, lwd=1, xlab="Year")
+lines(smooth.spline(time(injcjc), injcjc, spar=0.05),lty=1, lwd=1.5, col="green")          
+lines(smooth.spline(time(injcjc), injcjc, spar=1.0),lty=1, lwd=1.5, col="blue")  
+# Add Legend
+leg.txt <- c("Original Series", "Spline: Smoothing Parameter=.05", "Spline: Smoothing Parameter=1.0")
+legend("topleft", legend=leg.txt, lty=c(1,1,1), col=c("black","green","blue"),
+       bty='n', cex=1, merge = TRUE, bg=336)
+```
+
