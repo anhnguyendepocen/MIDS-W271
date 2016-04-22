@@ -250,16 +250,18 @@ pacf(delta.price, main="PACF of Price Change",
 # order models, especially for seasonality.
 price.arima <- auto.arima(ts_price)
 
-stargazer(summary(price.arima))
-xtable(confint(price.arima), caption='ARIMA Confidence Intervals')
+texreg(price.arima, custom.model.names = c('ARIMA(1,1,3)'),
+       caption = 'ARIMA(1,1,3) Model Parameters')
+xtable(confint(price.arima), 
+       caption='ARIMA(1,1,3) Confidence Intervals')
 
 ## ---- part4_arima_residuals_plot ----
 par(mfrow=c(2,2))
-plot.ts(price.arima$residuals, main="ARIMA Residuals",
+plot.ts(price.arima$residuals, main="ARIMA(1,1,3) Residuals",
         ylab="Value", xlab="Year")
 hist(price.arima$residuals, main="Histogram of Residuals",
      xlab="Value", breaks=50)
-acf(price.arima$residuals, main="Acf of Residuals",
+acf(price.arima$residuals, main="ACF of ARIMA Residuals",
     xlab="Lag",lag.max = 100)
 acf(price.arima$residuals^2, main="ACF of Squared Residuals",
      xlab="Lag", lag.max = 100)
@@ -269,7 +271,8 @@ acf(price.arima$residuals^2, main="ACF of Squared Residuals",
 price.garch <- garchFit(price.arima$residuals~garch(1,1), trace=F)
 res.garch <- price.garch@residuals
 
-summary(price.garch)
+texreg(price.garch, custom.model.names = c('GARCH(1,1)'),
+       caption='GARCH(1,1) Model Parameters')
 
 ## ---- part4_garch_residuals_plot ----
 par(mfrow=c(2,2))
@@ -297,7 +300,7 @@ se.arima <- (forecast$upper[,2]-forecast$mean)/1.96
 cse.garch <- price.garch.fcast$standardDeviation
 # put the conditional SE back to ARIMA SE
 se.combine <- se.arima / se.resid * cse.garch
-forecast$mean <- forecast$mean + ts2.garch.fcast$meanForecast
+forecast$mean <- forecast$mean + price.garch.fcast$meanForecast
 forecast$lower[,2] <- forecast$mean - 1.96 * se.combine
 forecast$lower[,1] <- forecast$mean - 1.645 * se.combine
 forecast$upper[,2] <- forecast$mean + 1.96 * se.combine
