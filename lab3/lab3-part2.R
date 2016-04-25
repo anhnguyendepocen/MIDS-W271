@@ -13,9 +13,7 @@ library(zoo)
 library(forecast)
 library(stargazer)
 library(texreg)
-library(xtable)
-options(xtable.comment=FALSE)
-
+rm(list=ls())
 
 #########################################################################
 #
@@ -250,6 +248,30 @@ texreg(ts1.garch, digits=3,
 ## ---- part2_garch_model_summary ---
 summary(ts1.garch)
 
+## ---- part2_backfit ----
+
+# backfit remove the last 10% and re-estimate
+fit <- Arima(ts1[1:(length(ts1)-230)], order=c(0,1,0))
+
+par(mfrow=c(1,1))
+plot.ts(ts1[1:(length(ts1)-230)], col="navy", 
+        main="Original vs an ARIMA(0,1,0) for 10% Backfit",
+        ylab="Original and Estimated Values",
+        pch=1)
+par(new=T)
+plot.ts(fitted(fit),col="blue",axes=T,xlab="",ylab="")
+
+leg.txt <- c("Original Series", "Estimated Series", "Residuals")
+legend("topleft", legend=leg.txt, lty=1, col=c("navy","blue","green"),
+       bty='n', cex=1)
+
+par(new=T)
+plot.ts(fit$resid,axes=F,xlab="",ylab="",col="green",
+        ylim=c(-10,50), pch=1)
+axis(side=4, col="green")
+mtext("Residuals", side=4, line=2,col="green")
+
+
 ## ---- part2_forecast_model ----
 
 # standard error of the residuals from the ARIMA model
@@ -284,7 +306,7 @@ plot.ts(fitted(ts1.fit1),col="blue",
 leg.txt <- c("Original", "Estimated", "Forecast")
 legend("topright", legend=leg.txt, lty=c(2,2,1), lwd=c(1,2,2),
        col=c("black","blue","blue"), bty='n', cex=1)
-
+ 
 ## ---- part2_end ----
 
 ####################################################################

@@ -265,10 +265,15 @@ We use the `get.best.arima` function from the async materials and the Introducto
 ```
 ```{r part2_model_plot_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
-
 \newpage
+
 ```{r part2_model_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=7.0}
 ```
+\newpage
+
+```{r part2_backfit, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
+```
+\newpage
 
 The residuals show an increased volatility at the right end of the residuals graph, and the PACF of the squared residuals shows definite autocorrelation of the residuals.
 
@@ -356,16 +361,26 @@ The seasonal component is present and seems to be in multiples of 4 and 13.
 
 ## Modeling
 
-We use the `auto.arima` function to estimate the best SARIMA model and we obtain a SARIMA(1,1,1)(0,1,1)[52].
+We use the `auto.arima` function to estimate the best SARIMA model and we obtain a SARIMA(1,1,1)(0,1,1)[52]. The in-fit plot, below, shows that the estimated series is a reasonable approximation of the original series and captures most of the dynamics of that series. However, note that the volatility of the residual series increases with time, indicating possible heteroskedasticity of the residuals.
 
 ```{r part3_model, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 ```
+
+```{r part3_model_summary_latex, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```
+
 ```{r part3_model_plot_ts, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
 \newpage
 ```{r part3_model_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
+
+The residual continues to show increasing volatility over time, and the autocorrelation of the squared residuals confirms the heteroskedasticity of the residuals.
+
+A GARCH(1,1) model is estimated for the SARIMA model residuals and the results are explored in the next few graphs.
+
 \newpage
+
 
 Garch model
 
@@ -373,6 +388,8 @@ Garch model
 ```
 ```{r part3_garch_residual_plots, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
+
+The Box-Ljung tests run as part of the `garchFit()` output show that for lags up to 20 the resulting residuals are independent while the Jarque-Bera test and Shapiro-Wilk test show that the residual distribution is not normal. However the squared residual plot seems to indicate otherwise.
 
 ## Forecast
 
@@ -382,6 +399,7 @@ Garch model
 ```{r part3_forecast_plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height=6.5}
 ```
 
+The forecast is projected 12 steps ahead as depicted in the graph, above. The confidence intervals have been adjusted for the GARCH estimated process of the residuals.
 
 
 \newpage

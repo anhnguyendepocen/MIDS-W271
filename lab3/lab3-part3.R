@@ -5,14 +5,8 @@
 #
 #########################################################################
 ## ---- part3_setup ----
-library(ggplot2)
-library(astsa)
-library(tseries)
-library(zoo)
-library(forecast)
-library(stargazer)
-library(texreg)
-library(fGarch)
+
+rm(list=ls())
 
 #########################################################################
 #
@@ -81,9 +75,12 @@ plot.ts(ts.full, main="Search Activity", xlab="Year", ylab="Value",
 tail(ts.csv_load[1:365,])
 head(ts.csv_load[366:630,])
 tail(ts.csv_load[366:630,])
-ts1 <- ts(ts.csv_load[1:365,]$data.science,   start=c(2004, 1), frequency = 52)
-ts2 <- ts(ts.csv_load[366:630,]$data.science, start=c(2011, 1), frequency = 52)
+ts1 <- ts(ts.csv_load[1:365,]$data.science,   start=c(2004, 1), frequency=365.25/7)
+ts2 <- ts(ts.csv_load[366:630,]$data.science, start=c(2011, 1), frequency=365.25/7)
 
+# The Box-Ljung tests tell us that the first part of the series is independent 
+# (we do not reject the null hypothesis) while the second part of the series
+# is not (we reject the null hypothesis that the series is independent)
 Box.test(ts1, type="Ljung-Box")
 Box.test(ts2, type="Ljung-Box")
 
@@ -173,7 +170,7 @@ t(confint(ts2.fit))
 par(mfrow=c(1,1))
 plot.ts(ts2, col='cyan',
         main='Time Series vs. SARIMA(1,1,1)(0,1,1)[52] Model',
-        ylab='Original and Estimated Values', xlab='Period',
+        ylab='Original and Estimated Values', xlab='Year',
         pch=1, lty=1)
 par(new=T)
 plot.ts(fitted(ts2.fit), col='navy', axes=F,
@@ -198,10 +195,21 @@ acf(ts2.fit$residuals, main="ACF of SARIMA Residuals",
 acf(ts2.fit$residuals^2, main="ACF of SARIMA Residuals Squared",
     xlab="Lag")
 
+## ---- part3_model_summary_latex ----
+
+fit.df <- data.frame(cbind(ts2, fitted(ts2.fit), ts2.fit$residuals))
+class(df)
+stargazer(fit.df, type="latex",title="Comparative Statistics", digits=1,
+          header=FALSE,
+          covariate.labels = c("2011-2016 Series",
+                               "SARIMA(0,1,0)(0,1,1)[52]", 
+                               "Residuals"))
+
+
 ## ---- part3_garch ----
 # shows a time-varying residual so fit a GARCH model
 # an ARCH(1)
-ts2.garch <- garchFit(ts2.fit$residuals~garch(1,1), trace=FALSE)
+ts2.garch <- garchFit(~garch(1,1), data=ts2.fit$residuals, trace=FALSE)
 summary(ts2.garch)
 
 ## ---- part3_garch_residual_plots ----
@@ -242,10 +250,10 @@ forecast$upper[,1] <- forecast$mean + 1.645 * se.combine
 # chart overlay
 par(mfrow=c(1,1))
 plot(forecast,
-     main="12-Step Ahead Forecast and Original & Estimated Series",
+     main="12-Step Ahead Forecast",
      xlab="Time Period",
      ylab="Original and Forecasted Values",
-     lty=2,lwd=1.5)
+     lty=2,lwd=1.5, ylim=c(-8,15))
 par(new=T)
 #plot.ts(fitted(ts2.fit),axes=F, col="blue",
 #        lty=1, lwd=2, xlab="",ylab="",xlim=c(2011,2016))

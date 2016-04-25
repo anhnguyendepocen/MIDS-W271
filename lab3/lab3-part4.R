@@ -13,6 +13,8 @@ library(tseries)
 library(forecast)
 library(stargazer)
 library(xtable)
+options(xtable.comment=FALSE)
+rm(list=ls())
 
 # A function to output nice summaries into xtable
 summaryfunction= function (x){
